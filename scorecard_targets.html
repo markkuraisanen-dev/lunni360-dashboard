@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tavoitteet — Lunni360 Scorecard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f3; --surface: #ffffff; --border: #e8e4dd; --border-light: #f0ece6;
+    --text-primary: #1a1814; --text-secondary: #8a8478; --text-muted: #bbb5ac;
+    --red: #ff4d4d; --orange: #ff8c42; --green: #4caf7d; --star: #f5c842;
+    --blue: #4f9cf9; --purple: #a78bfa; --teal: #34d399; --pink: #f472b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); min-height: 100vh; padding: 40px 20px; }
+  .page { max-width: 1100px; margin: 0 auto; }
+
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .target-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; }
+  .target-header h1 { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+  .target-header h2 { font-size: 24px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.02em; }
+  .nav-links { display: flex; gap: 6px; margin-top: 8px; }
+  .nav-links a { font-size: 11px; color: var(--text-muted); text-decoration: none; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; transition: all 0.15s; }
+  .nav-links a:hover { color: var(--blue); border-color: var(--blue); }
+  .btn-primary { font-size: 12px; font-weight: 600; background: var(--text-primary); color: white; border: none; border-radius: 10px; padding: 10px 20px; cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary { font-size: 12px; font-weight: 500; background: var(--surface); color: var(--text-secondary); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; cursor: pointer; }
+
+  /* Defaults banner */
+  .defaults-banner { background: #fffbeb; border: 1px solid rgba(245,200,66,0.3); border-radius: 10px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--text-secondary); }
+  .defaults-banner strong { color: var(--text-primary); }
+
+  /* Workdays banner */
+  .workdays-banner { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; animation: fadeUp 0.25s ease both; }
+  .workdays-banner-left { display: flex; align-items: center; gap: 10px; }
+  .workdays-banner-label { font-size: 11px; color: var(--text-secondary); }
+  .workdays-banner-label strong { color: var(--text-primary); }
+  .workdays-input-main { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; width: 56px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; color: var(--text-primary); background: var(--surface); }
+
+  /* Two column layout */
+  .target-layout { display: grid; grid-template-columns: 260px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 800px) { .target-layout { grid-template-columns: 1fr; } }
+
+  /* Seller list */
+  .seller-list-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; animation: fadeUp 0.3s ease both; }
+  .seller-list-header { padding: 14px 16px; border-bottom: 1px solid var(--border-light); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+  .seller-list-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background 0.12s; }
+  .seller-list-item:last-child { border-bottom: none; }
+  .seller-list-item:hover { background: var(--bg); }
+  .seller-list-item.selected { background: #f0f7ff; }
+  .seller-sel-bar { width: 4px; height: 32px; border-radius: 2px; flex-shrink: 0; transition: background 0.2s; }
+  .seller-list-item.selected .seller-sel-bar { background: var(--blue); }
+  .seller-list-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; flex-shrink: 0; }
+  .seller-list-info { flex: 1; }
+  .seller-list-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .seller-list-role { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+  .seller-list-badge { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 10px; }
+  .badge-ok { background: rgba(76,175,125,0.1); color: var(--green); }
+  .badge-draft { background: rgba(255,140,66,0.1); color: var(--orange); }
+  .badge-missing { background: rgba(255,77,77,0.1); color: var(--red); }
+
+  /* Target form */
+  .target-form-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; animation: fadeUp 0.35s ease both; }
+  .target-form-header { padding: 16px 20px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .target-form-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; }
+  .target-form-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .target-form-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .workdays-override { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .workdays-override label { font-size: 11px; color: var(--text-secondary); }
+  .workdays-override input { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; width: 48px; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; color: var(--text-primary); background: var(--surface); }
+  .workdays-override .diff { font-size: 10px; color: var(--orange); }
+
+  /* Column headers */
+  .trackable-headers { display: grid; grid-template-columns: 28px 1fr 100px 100px 60px; gap: 10px; padding: 8px 20px; background: var(--bg); border-bottom: 1px solid var(--border-light); }
+  .trackable-headers span { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+
+  /* Trackable rows */
+  .trackable-row { display: grid; grid-template-columns: 28px 1fr 100px 100px 60px; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--border-light); transition: background 0.12s; }
+  .trackable-row:hover { background: #faf9f7; }
+  .trackable-row.inactive { opacity: 0.45; }
+
+  .toggle-wrap { display: flex; align-items: center; }
+  .toggle { width: 28px; height: 16px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--border); position: relative; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+  .toggle.on { background: var(--text-primary); border-color: var(--text-primary); }
+  .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: white; transition: transform 0.2s; }
+  .toggle.on::after { transform: translateX(12px); }
+
+  .trackable-info { display: flex; align-items: center; gap: 8px; }
+  .trackable-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .trackable-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .trackable-model { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+
+  .target-input { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; width: 100%; text-align: center; border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; color: var(--text-primary); background: var(--surface); transition: border-color 0.15s; }
+  .target-input:focus { outline: none; border-color: var(--text-primary); }
+  .target-input.modified { border-color: var(--orange); }
+  .target-input-label { font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 3px; }
+  .target-input-label.modified { color: var(--orange); }
+
+  .calc-result { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-secondary); text-align: center; }
+  .calc-result strong { color: var(--text-primary); font-size: 14px; }
+
+  .from-default { font-size: 9px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; }
+  .default-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--orange); }
+
+  .form-footer { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: var(--bg); border-top: 1px solid var(--border-light); }
+  .form-footer-note { font-size: 11px; color: var(--text-muted); }
+
+  /* Status messages */
+  .msg-success { background: rgba(76,175,125,0.08); border: 1px solid rgba(76,175,125,0.3); color: var(--green); padding: 10px 16px; border-radius: 8px; font-size: 12px; margin-bottom: 16px; display: none; }
+  .msg-error { background: rgba(255,77,77,0.08); border: 1px solid rgba(255,77,77,0.3); color: var(--red); padding: 10px 16px; border-radius: 8px; font-size: 12px; margin-bottom: 16px; display: none; }
+
+  .empty-state { text-align: center; padding: 48px; color: var(--text-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="target-header">
+    <div>
+      <h1 id="headerLabel">Tavoitteiden asetus</h1>
+      <h2>Tavoitteet & Seuranta</h2>
+      <div class="nav-links">
+        <a href="/scorecard">← Scorecard</a>
+        <a href="/">Dashboard</a>
+        <a href="/logout">Ulos</a>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-secondary" id="btnCopyAll">Kopioi oletustavoitteet kaikille</button>
+      <button class="btn-primary" id="btnSave">Tallenna muutokset</button>
+    </div>
+  </div>
+
+  <div id="msgSuccess" class="msg-success"></div>
+  <div id="msgError" class="msg-error"></div>
+
+  <!-- Defaults banner -->
+  <div class="defaults-banner">
+    <span style="font-size:15px">⚡</span>
+    <span><strong>Oletustavoitteet</strong> kopioidaan automaattisesti kaikille myyjille. Muuta myyjäkohtaisesti tarvittaessa.</span>
+  </div>
+
+  <!-- Org workdays -->
+  <div class="workdays-banner">
+    <div class="workdays-banner-left">
+      <div style="font-size:18px">📅</div>
+      <div>
+        <div class="workdays-banner-label"><strong>Organisaation työpäivät</strong> — pohja kaikille</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">Myyjäkohtainen poikkeama asetetaan myyjärivillä</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;color:var(--text-secondary)" id="currentMonthLabel">Maaliskuu:</span>
+      <input type="number" class="workdays-input-main" id="orgWorkdays" value="20" min="1" max="31">
+      <span style="font-size:10px;color:var(--text-muted)">pv</span>
+    </div>
+  </div>
+
+  <!-- Two column layout -->
+  <div class="target-layout">
+
+    <!-- Seller list -->
+    <div class="seller-list-card">
+      <div class="seller-list-header" id="sellerListHeader">Myyjät (—)</div>
+      <div id="sellerList"><div class="empty-state">Ladataan...</div></div>
+    </div>
+
+    <!-- Target form -->
+    <div class="target-form-card" id="targetFormCard">
+      <div id="targetFormContent"><div class="empty-state">Valitse myyjä vasemmalta</div></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+  var config = null;
+  var users = [];
+  var selectedEmail = null;
+  var MONTHS = ['','Tammikuu','Helmikuu','Maaliskuu','Huhtikuu','Toukokuu','Kesäkuu','Heinäkuu','Elokuu','Syyskuu','Lokakuu','Marraskuu','Joulukuu'];
+  var now = new Date();
+  var curMonthKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+
+  document.getElementById('currentMonthLabel').textContent = MONTHS[now.getMonth()+1]+':';
+
+  // Load data
+  Promise.all([
+    fetch('/api/scorecard/config',{credentials:'include'}).then(function(r){return r.json();}),
+    fetch('/api/scorecard/users',{credentials:'include'}).then(function(r){return r.json();})
+  ]).then(function(results){
+    config = results[0];
+    users = (results[1].users||[]).filter(function(u){return u.role==='user'||u.role==='manager';});
+
+    // Set org workdays
+    var orgWd = (config.workdays && config.workdays.org_defaults && config.workdays.org_defaults[curMonthKey]) || 20;
+    document.getElementById('orgWorkdays').value = orgWd;
+
+    renderSellerList();
+    if(users.length>0) selectSeller(users[0].email);
+  }).catch(function(e){
+    showMsg('error','Virhe ladattaessa: '+e.message);
+  });
+
+  function renderSellerList(){
+    document.getElementById('sellerListHeader').textContent='Myyjät ('+users.length+')';
+    var html='';
+    var colors=['#4f9cf9','#a78bfa','#34d399','#fb923c','#f472b6','#ff8c42','#4caf7d'];
+    users.forEach(function(u,i){
+      var initials=u.name.split(' ').map(function(n){return n[0];}).join('').toUpperCase().substring(0,2);
+      var isSel=u.email===selectedEmail;
+      var hasConfig=config.users&&config.users[u.email];
+      var badge=hasConfig?'<div class="seller-list-badge badge-ok">OK</div>':'<div class="seller-list-badge badge-missing">Puuttuu</div>';
+      html+='<div class="seller-list-item'+(isSel?' selected':'')+'" data-email="'+u.email+'">'
+        +'<div class="seller-sel-bar"></div>'
+        +'<div class="seller-list-avatar" style="background:'+colors[i%colors.length]+'">'+initials+'</div>'
+        +'<div class="seller-list-info"><div class="seller-list-name">'+u.name+'</div>'
+        +'<div class="seller-list-role">'+u.role+(u.lunniUserName?' · '+u.lunniUserName:'')+'</div></div>'
+        +badge+'</div>';
+    });
+    document.getElementById('sellerList').innerHTML=html;
+
+    // Click handlers
+    document.querySelectorAll('.seller-list-item').forEach(function(el){
+      el.addEventListener('click',function(){selectSeller(el.getAttribute('data-email'));});
+    });
+  }
+
+  function selectSeller(email){
+    selectedEmail=email;
+    renderSellerList();
+    renderTargetForm();
+  }
+
+  function renderTargetForm(){
+    var user=users.find(function(u){return u.email===selectedEmail;});
+    if(!user){document.getElementById('targetFormContent').innerHTML='<div class="empty-state">Valitse myyjä</div>';return;}
+
+    var userConfig=(config.users&&config.users[user.email])||{};
+    var activeTrackables=userConfig.active_trackables||config.trackables.map(function(t){return t.key;});
+    var overrides=userConfig.overrides||{};
+    var userWdOverride=(config.workdays&&config.workdays.user_overrides&&config.workdays.user_overrides[user.email]&&config.workdays.user_overrides[user.email][curMonthKey])||'';
+    var orgWd=parseInt(document.getElementById('orgWorkdays').value)||20;
+    var effectiveWd=userWdOverride?parseInt(userWdOverride):orgWd;
+    var wdDiff=effectiveWd-orgWd;
+
+    var initials=user.name.split(' ').map(function(n){return n[0];}).join('').toUpperCase().substring(0,2);
+    var colors={'user':'#4f9cf9','manager':'#a78bfa','admin':'#34d399','superadmin':'#fb923c'};
+
+    var html='<div class="target-form-header">'
+      +'<div class="target-form-avatar" style="background:'+(colors[user.role]||'#4f9cf9')+'">'+initials+'</div>'
+      +'<div><div class="target-form-name">'+user.name+'</div>'
+      +'<div class="target-form-meta">'+user.role+(user.lunniUserName?' · Lunni: '+user.lunniUserName:'')+'</div></div>'
+      +'<div class="workdays-override"><label>Työpäivät:</label>'
+      +'<input type="number" id="userWorkdays" value="'+(userWdOverride||effectiveWd)+'" min="1" max="31">'
+      +(wdDiff!==0?'<span class="diff">'+(wdDiff>0?'+':'')+wdDiff+' pv</span>':'')
+      +'</div></div>';
+
+    // Column headers
+    html+='<div class="trackable-headers"><span></span><span>Seurattava asia</span><span style="text-align:center">Päivätavoite</span><span style="text-align:center">Kk-tavoite</span><span></span></div>';
+
+    // Trackable rows
+    config.trackables.forEach(function(t){
+      var isActive=activeTrackables.indexOf(t.key)!==-1;
+      var defaultTarget=t.model==='cumulative'?(config.defaults[t.key]||{}).monthly_target||t.monthly_target||4:(config.defaults[t.key]||{}).daily_target||t.daily_target||5;
+      var userTarget=overrides[t.key]?(t.model==='cumulative'?overrides[t.key].monthly_target:overrides[t.key].daily_target):null;
+      var displayTarget=userTarget!==null&&userTarget!==undefined?userTarget:defaultTarget;
+      var isModified=userTarget!==null&&userTarget!==undefined&&userTarget!==defaultTarget;
+
+      var kk;
+      if(t.model==='cumulative'){
+        kk=displayTarget;
+      } else {
+        kk=displayTarget*effectiveWd;
+      }
+
+      var inputLabel=t.model==='cumulative'?'kk-tavoite':'pv-tavoite';
+      var calcText=t.model==='cumulative'
+        ?'<strong>'+kk+'</strong><br><span style="font-size:9px;color:var(--text-muted)">kk yhteensä</span>'
+        :'<strong>'+kk+'</strong><br><span style="font-size:9px;color:var(--text-muted)">'+effectiveWd+' pv × '+displayTarget+'</span>';
+
+      html+='<div class="trackable-row'+(isActive?'':' inactive')+'" data-key="'+t.key+'">'
+        +'<div class="toggle-wrap"><div class="toggle'+(isActive?' on':'')+'" data-key="'+t.key+'"></div></div>'
+        +'<div class="trackable-info"><div class="trackable-dot" style="background:'+t.dot+'"></div>'
+        +'<div><div class="trackable-name">'+t.label+'</div>'
+        +'<div class="trackable-model">'+t.model+' · '+(t.model==='cumulative'?'kuukausittain':'päivittäinen')+'</div></div></div>'
+        +'<div><input type="number" class="target-input'+(isModified?' modified':'')+'" data-key="'+t.key+'" value="'+displayTarget+'"'+(isActive?'':' disabled')+'>'
+        +'<div class="target-input-label'+(isModified?' modified':'')+'">'+inputLabel+'</div></div>'
+        +'<div class="calc-result" data-calc="'+t.key+'">'+calcText+'</div>'
+        +'<div>'+(isModified?'<div class="from-default"><div class="default-dot"></div><span>oletus '+defaultTarget+'</span></div>':'')+'</div>'
+        +'</div>';
+    });
+
+    html+='<div class="form-footer"><div class="form-footer-note">Muutokset astuvat voimaan tallennuksen jälkeen</div>'
+      +'<div style="display:flex;gap:8px"><button class="btn-secondary" onclick="window.location.reload()">Peruuta</button>'
+      +'<button class="btn-primary" id="btnSaveUser">Tallenna '+user.name.split(' ')[0]+'lle</button></div></div>';
+
+    document.getElementById('targetFormContent').innerHTML=html;
+
+    // Toggle handlers
+    document.querySelectorAll('.toggle').forEach(function(el){
+      el.addEventListener('click',function(){
+        el.classList.toggle('on');
+        var row=el.closest('.trackable-row');
+        row.classList.toggle('inactive');
+        var inp=row.querySelector('.target-input');
+        inp.disabled=!el.classList.contains('on');
+      });
+    });
+
+    // Input change handlers - recalculate
+    document.querySelectorAll('.target-input').forEach(function(inp){
+      inp.addEventListener('input',function(){
+        recalcRow(inp.getAttribute('data-key'));
+      });
+    });
+
+    // Workdays change
+    var wdInput=document.getElementById('userWorkdays');
+    if(wdInput){
+      wdInput.addEventListener('input',function(){
+        config.trackables.forEach(function(t){recalcRow(t.key);});
+      });
+    }
+
+    // Save handler
+    var saveBtn=document.getElementById('btnSaveUser');
+    if(saveBtn) saveBtn.addEventListener('click',function(){saveCurrentUser();});
+  }
+
+  function recalcRow(key){
+    var t=config.trackables.find(function(tr){return tr.key===key;});
+    if(!t)return;
+    var inp=document.querySelector('.target-input[data-key="'+key+'"]');
+    var calc=document.querySelector('[data-calc="'+key+'"]');
+    if(!inp||!calc)return;
+    var val=parseInt(inp.value)||0;
+    var wd=parseInt(document.getElementById('userWorkdays').value)||20;
+    if(t.model==='cumulative'){
+      calc.innerHTML='<strong>'+val+'</strong><br><span style="font-size:9px;color:var(--text-muted)">kk yhteensä</span>';
+    } else {
+      calc.innerHTML='<strong>'+(val*wd)+'</strong><br><span style="font-size:9px;color:var(--text-muted)">'+wd+' pv × '+val+'</span>';
+    }
+  }
+
+  function saveCurrentUser(){
+    if(!selectedEmail||!config)return;
+
+    // Collect form data
+    var activeTrackables=[];
+    var overrides={};
+    document.querySelectorAll('.trackable-row').forEach(function(row){
+      var key=row.getAttribute('data-key');
+      var toggle=row.querySelector('.toggle');
+      var inp=row.querySelector('.target-input');
+      if(toggle&&toggle.classList.contains('on')) activeTrackables.push(key);
+      if(inp){
+        var t=config.trackables.find(function(tr){return tr.key===key;});
+        var val=parseInt(inp.value)||0;
+        if(t){
+          if(t.model==='cumulative') overrides[key]={monthly_target:val};
+          else overrides[key]={daily_target:val};
+        }
+      }
+    });
+
+    // User workdays override
+    var userWd=parseInt(document.getElementById('userWorkdays').value)||20;
+    var orgWd=parseInt(document.getElementById('orgWorkdays').value)||20;
+
+    // Update config
+    if(!config.users) config.users={};
+    config.users[selectedEmail]={active_trackables:activeTrackables,overrides:overrides};
+
+    if(!config.workdays) config.workdays={org_defaults:{},user_overrides:{}};
+    config.workdays.org_defaults[curMonthKey]=orgWd;
+    if(userWd!==orgWd){
+      if(!config.workdays.user_overrides) config.workdays.user_overrides={};
+      if(!config.workdays.user_overrides[selectedEmail]) config.workdays.user_overrides[selectedEmail]={};
+      config.workdays.user_overrides[selectedEmail][curMonthKey]=userWd;
+    }
+
+    // Save to server
+    fetch('/api/scorecard/config',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(config)
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.success){
+        showMsg('success','Tallennettu!');
+        renderSellerList();
+      } else {
+        showMsg('error',d.error||'Tallennusvirhe');
+      }
+    }).catch(function(e){showMsg('error',e.message);});
+  }
+
+  // Copy defaults to all
+  document.getElementById('btnCopyAll').addEventListener('click',function(){
+    if(!config||!users.length)return;
+    var allKeys=config.trackables.map(function(t){return t.key;});
+    users.forEach(function(u){
+      if(!config.users) config.users={};
+      if(!config.users[u.email]){
+        config.users[u.email]={active_trackables:allKeys,overrides:{}};
+      }
+    });
+    fetch('/api/scorecard/config',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(config)
+    }).then(function(r){return r.json();})
+    .then(function(d){
+      if(d.success){showMsg('success','Oletustavoitteet kopioitu kaikille!');renderSellerList();}
+      else showMsg('error',d.error);
+    });
+  });
+
+  // Global save
+  document.getElementById('btnSave').addEventListener('click',function(){
+    if(selectedEmail) saveCurrentUser();
+  });
+
+  function showMsg(type,text){
+    var el=document.getElementById(type==='success'?'msgSuccess':'msgError');
+    el.textContent=text;el.style.display='block';
+    setTimeout(function(){el.style.display='none';},3000);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunni360 — Kenttäkartta</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #fafaf8;
+    --border: #e8e4dd;
+    --accent: #4f9cf9;
+    --accent-hover: #3b8de6;
+    --accent-text: #ffffff;
+    --blue: #4f9cf9;
+    --pink: #f472b6;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --red: #ef4444;
+    --green: #34d399;
+    --text: #1a1814;
+    --muted: #8a8478;
+    --accent2: #a78bfa;
+    --accent3: #f472b6;
+    --accent4: #fb923c;
+    --font-display: 'DM Sans', sans-serif;
+    --font-mono: 'DM Sans', sans-serif;
+    --grid-color: transparent;
+    --chart-grid: rgba(0,0,0,0.06);
+    --shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-mono); display:flex; flex-direction:column; }
+
+  /* TOPBAR */
+  .topbar { height:48px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; padding:0 16px; flex-shrink:0; z-index:1000; }
+  .topbar-logo { font-family:var(--font-display); font-size:1.2rem; white-space:nowrap; }
+  .topbar-logo span { color:var(--accent); font-style:italic; }
+  .divider { width:1px; height:20px; background:var(--border); }
+  .nav-link { color:var(--muted); text-decoration:none; font-size:0.65rem; letter-spacing:0.08em; padding:5px 10px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; cursor:pointer; background:transparent; font-family:var(--font-mono); }
+  .nav-link:hover, .nav-link.active { color:var(--accent); border-color:var(--accent); }
+  .nav-link.active { background:rgba(200,240,96,0.08); }
+  .topbar-right { margin-left:auto; display:flex; gap:8px; align-items:center; font-size:0.65rem; color:var(--muted); }
+  .topbar-right strong { color:var(--accent); }
+
+  /* LAYOUT */
+  .layout { display:flex; flex:1; overflow:hidden; min-height:0; }
+
+  /* SIDEBAR */
+  .sidebar { width:280px; flex-shrink:0; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow-y:auto; overflow-x:hidden; }
+  .sidebar::-webkit-scrollbar { width:3px; }
+  .sidebar::-webkit-scrollbar-thumb { background:var(--border); }
+  .s-section { padding:12px 14px; border-bottom:1px solid var(--border); }
+  .s-title { font-size:0.58rem; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+  .s-title-action { color:var(--accent); cursor:pointer; font-size:0.58rem; }
+
+  /* MODE TOGGLE */
+  .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px; }
+  .mode-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:6px; font-family:var(--font-mono); font-size:0.6rem; border-radius:4px; cursor:pointer; text-align:center; transition:all 0.2s; }
+  .mode-btn.active { background:rgba(200,240,96,0.12); border-color:var(--accent); color:var(--accent); }
+
+  /* MAP STYLE */
+  .style-grid { display:grid; grid-template-columns:1fr 1fr; gap:3px; }
+  .style-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:6px; font-family:var(--font-mono); font-size:0.6rem; border-radius:4px; cursor:pointer; text-align:center; transition:all 0.2s; }
+  .style-btn.active { background:rgba(200,240,96,0.12); border-color:var(--accent); color:var(--accent); }
+
+  /* LEGEND */
+  .legend { display:flex; flex-direction:column; gap:4px; }
+  .legend-item { display:flex; align-items:center; gap:7px; font-size:0.63rem; }
+  .legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .legend-count { margin-left:auto; color:var(--muted); font-size:0.6rem; }
+
+  /* STATUS CHIPS */
+  .chips { display:flex; flex-direction:column; gap:3px; }
+  .chip { display:flex; align-items:center; gap:6px; padding:5px 8px; border:1px solid var(--border); border-radius:4px; font-size:0.63rem; cursor:pointer; transition:all 0.15s; color:var(--muted); background:var(--surface2); }
+  .chip.active { color:var(--text); }
+  .chip-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .chip-count { margin-left:auto; font-size:0.6rem; opacity:0.7; }
+
+  /* CLASS CHIPS */
+  .class-chips { display:flex; flex-wrap:wrap; gap:4px; }
+  .class-chip { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:3px 8px; font-family:var(--font-mono); font-size:0.58rem; border-radius:10px; cursor:pointer; transition:all 0.15s; }
+  .class-chip.active { background:rgba(200,240,96,0.1); border-color:var(--accent); color:var(--accent); }
+
+  /* DONE RANGE */
+  .done-range { background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:6px 10px; font-family:var(--font-mono); font-size:0.63rem; border-radius:4px; width:100%; }
+  .done-range:focus { outline:none; border-color:var(--accent); }
+
+  /* SEARCH */
+  .search { background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:6px 10px; font-family:var(--font-mono); font-size:0.63rem; border-radius:4px; width:100%; }
+  .search:focus { outline:none; border-color:var(--accent); }
+  .search::placeholder { color:var(--muted); }
+
+  /* MAP AREA */
+  .map-area { flex:1; position:relative; min-width:0; }
+  #map { position:absolute; inset:0; }
+
+  /* STATS BAR */
+  .statsbar { height:32px; background:var(--surface); border-top:1px solid var(--border); display:flex; align-items:center; gap:16px; padding:0 16px; flex-shrink:0; font-size:0.62rem; }
+  .stat { display:flex; align-items:center; gap:5px; }
+  .stat-dot { width:7px; height:7px; border-radius:50%; }
+
+  /* POPUP */
+  .custom-popup .leaflet-popup-content-wrapper { background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); font-family:var(--font-mono); box-shadow:0 8px 32px rgba(0,0,0,0.6); padding:0; }
+  .custom-popup .leaflet-popup-content { margin:0; min-width:200px; }
+  .custom-popup .leaflet-popup-tip { background:var(--surface); }
+  .popup-inner { padding:14px 16px; }
+  .popup-title { font-family:var(--font-display); font-size:1rem; margin-bottom:10px; line-height:1.2; }
+  .popup-row { display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.65rem; }
+  .popup-label { color:var(--muted); }
+  .popup-pill { padding:2px 7px; border-radius:8px; font-size:0.6rem; }
+
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .spinner { width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">Lunni <span>Kartta</span></div>
+  <div class="divider"></div>
+  <a href="/crm" class="nav-link">CRM</a>
+  <a href="/fsm" class="nav-link">FSM</a>
+  <a href="/map" class="nav-link active">Kartta</a>
+  <a href="/" class="nav-link">Dashboard</a>
+  <div class="topbar-right">
+    <div class="spinner" id="spinner" style="display:none"></div>
+    <strong id="visibleCount">—</strong> <span>työtä kartalla</span>
+    <button class="nav-link" id="refreshBtn" onclick="manualRefresh()">⟳ Päivitä</button>
+    <span id="cacheInfo"></span>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+
+    <div class="s-section">
+      <div class="s-title">Väritila</div>
+      <div class="mode-grid">
+        <button class="mode-btn active" id="modeStatus" onclick="setColorMode('status')">● Status</button>
+        <button class="mode-btn" id="modePriority" onclick="setColorMode('priority')">◈ Prioriteetti</button>
+      </div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-title">Karttapohja</div>
+      <div class="style-grid">
+        <button class="style-btn active" id="styleBtn-dark" onclick="setMapStyle('dark')">🌑 Tumma</button>
+        <button class="style-btn" id="styleBtn-night" onclick="setMapStyle('night')">🌃 Night</button>
+        <button class="style-btn" id="styleBtn-satellite" onclick="setMapStyle('satellite')">🛰 Satelliitti</button>
+        <button class="style-btn" id="styleBtn-light" onclick="setMapStyle('light')">☀️ Vaalea</button>
+      </div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-title">Legenda</div>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-title">
+        <span>Status</span>
+        <span class="s-title-action" onclick="toggleAllStatuses()">Kaikki / Ei mitään</span>
+      </div>
+      <div class="chips" id="statusChips"></div>
+    </div>
+
+    <div class="s-section" id="doneSection" style="display:none">
+      <div class="s-title">Valmistui viimeisen</div>
+      <select class="done-range" id="doneRange" onchange="applyAndRender()">
+        <option value="7">7 päivän aikana</option>
+        <option value="14">14 päivän aikana</option>
+        <option value="30" selected>30 päivän aikana</option>
+        <option value="90">3 kuukauden aikana</option>
+        <option value="365">12 kuukauden aikana</option>
+        <option value="all">Kaikki</option>
+      </select>
+    </div>
+
+    <div class="s-section">
+      <div class="s-title">
+        <span>Työlaji</span>
+        <span class="s-title-action" onclick="toggleAllClasses()">Kaikki / Ei mitään</span>
+      </div>
+      <div class="class-chips" id="classChips"></div>
+    </div>
+
+    <div class="s-section">
+      <div class="s-title">Haku</div>
+      <input class="search" id="searchBox" placeholder="Hae työn nimellä..." oninput="applyAndRender()">
+    </div>
+
+  </div>
+
+  <div class="map-area">
+    <div id="map"></div>
+  </div>
+</div>
+
+<div class="statsbar">
+  <div class="stat"><div class="stat-dot" style="background:#60c8f0"></div><span style="color:var(--muted)">Avoimet</span> <span id="statOpen">0</span></div>
+  <div class="stat"><div class="stat-dot" style="background:#f0c860"></div><span style="color:var(--muted)">Käynnissä</span> <span id="statInProgress">0</span></div>
+  <div class="stat"><div class="stat-dot" style="background:#f06060"></div><span style="color:var(--muted)">Korjausvelka</span> <span id="statRepair">0</span></div>
+  <div class="stat"><div class="stat-dot" style="background:#60f0a8"></div><span style="color:var(--muted)">Valmis</span> <span id="statDone">0</span></div>
+  <div style="margin-left:auto;font-size:0.6rem;color:var(--muted)" id="cacheInfoBar"></div>
+</div>
+
+<script>
+// ─── VAKIOT ───────────────────────────────────────────────────────────────────
+
+const STATUS_FI = {
+  open:'Avoin', in_progress:'Käynnissä', done:'Valmis', repair_deficit:'Korjausvelka',
+  unfinished:'Kesken', billed:'Laskutettu', billing:'Laskutuksessa',
+  revision:'Hyväksytty', odottaavaraosaa:'Odottaa varaosaa',
+  'Odottaa keräilyä':'Odottaa keräilyä', picking:'Keräily',
+  'Keräily valmis':'Keräily valmis', archived:'Arkistoitu',
+  'on_pause':'Tauolla', planning:'Suunnittelu', supplies:'Tarvikkeet',
+  reporting:'Raportointi', 'Odottaa osia':'Odottaa osia'
+};
+
+const STATUS_COLORS = {
+  open:'#60c8f0', in_progress:'#f0c860', done:'#60f0a8',
+  repair_deficit:'#f06060', unfinished:'#f0a860', billed:'#a060f0',
+  billing:'#c060f0', revision:'#c8f060', odottaavaraosaa:'#f060a8',
+  'Odottaa keräilyä':'#60a8f0', picking:'#a0c8f0', 'Keräily valmis':'#80f0c0',
+  archived:'#505060', on_pause:'#808090', planning:'#506080',
+  supplies:'#f0d060', reporting:'#90b090', 'Odottaa osia':'#f060c0'
+};
+
+const PRIO = {
+  high:     { color:'#f06060', size:14, label:'Korkea' },
+  elevated: { color:'#f0a860', size:11, label:'Korotettu' },
+  normal:   { color:'#60c8f0', size:8,  label:'Normaali' },
+  low:      { color:'#6b7080', size:6,  label:'Matala' },
+};
+
+const CLASS_FI = {
+  annual_service:'Vuosihuolto', service:'Huolto', malfunction:'Vika/Korjaus',
+  installation:'Asennus', project:'Projekti', Kartoitus:'Kartoitus',
+  Kalibrointi:'Kalibrointi', 'Matka-aika':'Matka-aika', '':'Muu'
+};
+
+const TILE_URLS = {
+  dark:      '/tiles/dark/{z}/{x}/{y}.png',
+  night:     '/tiles/night/{z}/{x}/{y}.png',
+  satellite: '/tiles/satellite/{z}/{x}/{y}.png',
+  light:     '/tiles/light/{z}/{x}/{y}.png',
+};
+
+const DONE_STATUSES = new Set(['done','billed','revision','billing','archived']);
+
+// ─── TILA ─────────────────────────────────────────────────────────────────────
+
+let map = null;
+let tileLayer = null;
+let allWorkorders = [];
+let markers = [];
+let colorMode = 'status';
+let activeStatuses = new Set();
+let activeClasses = new Set();
+let refreshCountdown = null;
+
+// ─── KARTTA ───────────────────────────────────────────────────────────────────
+
+function initMap() {
+  map = L.map('map', { zoomControl:true, preferCanvas:true }).setView([62.5, 25.5], 6);
+  setMapStyle('dark');
+}
+
+function setMapStyle(id) {
+  if (tileLayer) map.removeLayer(tileLayer);
+  tileLayer = L.tileLayer(TILE_URLS[id] || TILE_URLS.dark, {
+    attribution:'© OpenStreetMap © CARTO', maxZoom:19
+  }).addTo(map);
+  document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('styleBtn-' + id);
+  if (btn) btn.classList.add('active');
+}
+
+function setColorMode(mode) {
+  colorMode = mode;
+  document.getElementById('modeStatus').classList.toggle('active', mode === 'status');
+  document.getElementById('modePriority').classList.toggle('active', mode === 'priority');
+  renderLegend();
+  renderMarkers();
+}
+
+// ─── MARKER ───────────────────────────────────────────────────────────────────
+
+function makeIcon(wo) {
+  let color, size;
+  if (colorMode === 'status') {
+    color = STATUS_COLORS[wo.status] || '#6b7080';
+    size = 10;
+  } else {
+    const p = PRIO[wo.priority] || PRIO.normal;
+    color = p.color; size = p.size;
+  }
+  const html = `<div style="width:${size+4}px;height:${size+4}px;border-radius:50%;background:${color};border:2.5px solid rgba(255,255,255,0.9);outline:1px solid rgba(0,0,0,0.5);cursor:pointer"></div>`;
+  return L.divIcon({ html, className:'', iconSize:[size+4,size+4], iconAnchor:[(size+4)/2,(size+4)/2], popupAnchor:[0,-(size+4)/2] });
+}
+
+function makePopup(wo) {
+  const sc = STATUS_COLORS[wo.status] || '#6b7080';
+  const pc = (PRIO[wo.priority] || PRIO.normal).color;
+  const cls = CLASS_FI[wo.classification] || wo.classification || '—';
+  const mo = wo.target_month && wo.target_year ? `${wo.target_month}/${wo.target_year}` : '—';
+  const name = wo.name ? wo.name.substring(0,45) : 'Työ #' + wo.id;
+  return `<div class="popup-inner">
+    <div class="popup-title">${name}</div>
+    <div class="popup-row"><span class="popup-label">Status</span><span class="popup-pill" style="background:${sc}22;color:${sc};border:1px solid ${sc}44">${STATUS_FI[wo.status]||wo.status}</span></div>
+    <div class="popup-row"><span class="popup-label">Prioriteetti</span><span style="color:${pc}">${(PRIO[wo.priority]||PRIO.normal).label}</span></div>
+    <div class="popup-row"><span class="popup-label">Työlaji</span><span>${cls}</span></div>
+    <div class="popup-row"><span class="popup-label">Kohde kk</span><span>${mo}</span></div>
+    <div class="popup-row"><span class="popup-label">Koordinaatit</span><span style="font-size:0.58rem;color:var(--muted)">${parseFloat(wo.latitude).toFixed(4)}°N ${parseFloat(wo.longitude).toFixed(4)}°E</span></div>
+  </div>`;
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+
+function renderMarkers() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  const visible = getFiltered();
+  visible.forEach(wo => {
+    const lat = parseFloat(wo.latitude), lng = parseFloat(wo.longitude);
+    if (isNaN(lat) || isNaN(lng)) return;
+    const m = L.marker([lat, lng], { icon: makeIcon(wo) })
+      .bindPopup(makePopup(wo), { className:'custom-popup', maxWidth:260 })
+      .addTo(map);
+    markers.push(m);
+  });
+
+  document.getElementById('visibleCount').textContent = visible.length;
+  updateStats(visible);
+}
+
+function renderLegend() {
+  const el = document.getElementById('legend');
+  const visible = getFiltered();
+  if (colorMode === 'status') {
+    const counts = {};
+    visible.forEach(w => { counts[w.status] = (counts[w.status]||0)+1; });
+    el.innerHTML = Object.entries(STATUS_COLORS)
+      .filter(([s]) => counts[s])
+      .sort((a,b) => (counts[b[0]]||0)-(counts[a[0]]||0))
+      .map(([s,c]) => `<div class="legend-item"><div class="legend-dot" style="background:${c}"></div><span>${STATUS_FI[s]||s}</span><span class="legend-count">${counts[s]}</span></div>`)
+      .join('');
+  } else {
+    const counts = {};
+    visible.forEach(w => { const p=w.priority||'normal'; counts[p]=(counts[p]||0)+1; });
+    el.innerHTML = Object.entries(PRIO)
+      .map(([p,conf]) => `<div class="legend-item"><div class="legend-dot" style="background:${conf.color};width:${conf.size}px;height:${conf.size}px"></div><span>${conf.label}</span><span class="legend-count">${counts[p]||0}</span></div>`)
+      .join('');
+  }
+}
+
+function updateStats(visible) {
+  const c = { open:0, in_progress:0, repair_deficit:0, done:0 };
+  visible.forEach(w => { if (c[w.status]!==undefined) c[w.status]++; });
+  document.getElementById('statOpen').textContent = c.open;
+  document.getElementById('statInProgress').textContent = c.in_progress;
+  document.getElementById('statRepair').textContent = c.repair_deficit;
+  document.getElementById('statDone').textContent = c.done;
+}
+
+// ─── FILTTERIT ────────────────────────────────────────────────────────────────
+
+function getFiltered() {
+  const search = (document.getElementById('searchBox').value || '').toLowerCase();
+  const doneRange = document.getElementById('doneRange').value;
+  const now = Date.now();
+  const allClassActive = activeClasses.size === 0 || activeClasses.size === document.querySelectorAll('.class-chip').length;
+
+  return allWorkorders.filter(w => {
+    const lat = parseFloat(w.latitude), lng = parseFloat(w.longitude);
+    if (!lat || !lng || lat === 0 || lng === 0) return false;
+    if (isNaN(lat) || isNaN(lng)) return false;
+
+    // Status filter
+    if (activeStatuses.size > 0 && !activeStatuses.has(w.status)) return false;
+
+    // Done aikajakso
+    if (DONE_STATUSES.has(w.status) && doneRange !== 'all') {
+      const days = parseInt(doneRange);
+      const d = new Date(w.is_completed || w.ends || w.begins || '2000-01-01').getTime();
+      if ((now - d) > days * 86400000) return false;
+    }
+
+    // Työlaji
+    if (!allClassActive && !activeClasses.has(w.classification||'')) return false;
+
+    // Haku
+    if (search && !(w.name||'').toLowerCase().includes(search)) return false;
+
+    return true;
+  });
+}
+
+function applyAndRender() {
+  // Näytä/piilota done-aikajakso
+  const hasDone = [...activeStatuses].some(s => DONE_STATUSES.has(s));
+  document.getElementById('doneSection').style.display = hasDone ? 'block' : 'none';
+  renderLegend();
+  renderMarkers();
+}
+
+// Status chips
+function buildStatusChips() {
+  const counts = {};
+  allWorkorders.forEach(w => { counts[w.status] = (counts[w.status]||0)+1; });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+
+  // Oletuksena: kaikki muut paitsi done/billed/revision/archived
+  activeStatuses.clear();
+  sorted.forEach(([s]) => { if (!DONE_STATUSES.has(s)) activeStatuses.add(s); });
+
+  const el = document.getElementById('statusChips');
+  el.innerHTML = sorted.map(([s, cnt]) => {
+    const color = STATUS_COLORS[s] || '#6b7080';
+    const active = activeStatuses.has(s);
+    return `<div class="chip ${active?'active':''}" data-status="${s}"
+      style="${active?'border-color:'+color+';background:'+color+'18':''}"
+      onclick="toggleStatus('${s}',this)">
+      <div class="chip-dot" style="background:${color}"></div>
+      <span style="${active?'color:'+color:''}">${STATUS_FI[s]||s}</span>
+      <span class="chip-count">${cnt}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleStatus(s, el) {
+  const color = STATUS_COLORS[s] || '#6b7080';
+  if (activeStatuses.has(s)) {
+    activeStatuses.delete(s);
+    el.classList.remove('active');
+    el.style.borderColor = ''; el.querySelector('span').style.color = ''; el.style.background = '';
+  } else {
+    activeStatuses.add(s);
+    el.classList.add('active');
+    el.style.borderColor = color; el.querySelector('span').style.color = color; el.style.background = color+'18';
+  }
+  applyAndRender();
+}
+
+function toggleAllStatuses() {
+  const chips = document.querySelectorAll('#statusChips .chip');
+  const allActive = activeStatuses.size === chips.length;
+  activeStatuses.clear();
+  chips.forEach(el => {
+    const s = el.dataset.status;
+    const color = STATUS_COLORS[s] || '#6b7080';
+    el.classList.remove('active');
+    el.style.borderColor = ''; el.querySelector('span').style.color = ''; el.style.background = '';
+    if (!allActive) {
+      activeStatuses.add(s);
+      el.classList.add('active');
+      el.style.borderColor = color; el.querySelector('span').style.color = color; el.style.background = color+'18';
+    }
+  });
+  applyAndRender();
+}
+
+// Class chips
+function buildClassChips() {
+  const counts = {};
+  allWorkorders.forEach(w => { const c=w.classification||''; counts[c]=(counts[c]||0)+1; });
+  activeClasses.clear();
+  Object.keys(counts).forEach(c => activeClasses.add(c));
+  const el = document.getElementById('classChips');
+  el.innerHTML = Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([cls,cnt]) =>
+    `<div class="class-chip active" data-cls="${cls}" onclick="toggleClass('${cls}',this)">${CLASS_FI[cls]||cls||'Muu'} <span style="opacity:0.6">${cnt}</span></div>`
+  ).join('');
+}
+
+function toggleClass(cls, el) {
+  if (activeClasses.has(cls)) { activeClasses.delete(cls); el.classList.remove('active'); }
+  else { activeClasses.add(cls); el.classList.add('active'); }
+  applyAndRender();
+}
+
+function toggleAllClasses() {
+  const chips = document.querySelectorAll('.class-chip');
+  const allActive = activeClasses.size === chips.length;
+  activeClasses.clear();
+  chips.forEach(el => {
+    if (!allActive) { activeClasses.add(el.dataset.cls); el.classList.add('active'); }
+    else el.classList.remove('active');
+  });
+  applyAndRender();
+}
+
+// ─── CACHE ────────────────────────────────────────────────────────────────────
+
+async function checkCacheStatus() {
+  try {
+    const s = await fetch('/api/cache/status').then(r=>r.json());
+    const btn = document.getElementById('refreshBtn');
+    const info = document.getElementById('cacheInfo');
+    if (s.refreshing) { btn.textContent='⟳ Päivitetään...'; btn.disabled=true; setTimeout(checkCacheStatus,3000); return s; }
+    if (s.canRefresh) { btn.textContent='⟳ Päivitä'; btn.disabled=false; }
+    else {
+      btn.disabled=true;
+      if (refreshCountdown) clearInterval(refreshCountdown);
+      let secs = s.secondsUntilRefresh;
+      btn.textContent = `⟳ ${secs}s`;
+      refreshCountdown = setInterval(() => {
+        secs--;
+        if (secs <= 0) { clearInterval(refreshCountdown); btn.textContent='⟳ Päivitä'; btn.disabled=false; }
+        else btn.textContent = `⟳ ${secs}s`;
+      }, 1000);
+    }
+    if (info && s.updated) info.textContent = new Date(s.updated).toLocaleString('fi-FI');
+    const bar = document.getElementById('cacheInfoBar');
+    if (bar && s.updated) bar.textContent = 'Data: ' + new Date(s.updated).toLocaleString('fi-FI');
+    return s;
+  } catch { return null; }
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled=true; btn.textContent='⟳ Käynnistetään...';
+  try {
+    const d = await fetch('/api/cache/refresh',{method:'POST'}).then(r=>r.json());
+    if (d.success) {
+      btn.textContent='⟳ Päivitetään...';
+      const poll = setInterval(async () => {
+        const s = await checkCacheStatus();
+        if (s && !s.refreshing) { clearInterval(poll); await loadData(); }
+      }, 2000);
+    } else await checkCacheStatus();
+  } catch { btn.disabled=false; btn.textContent='⟳ Päivitä'; }
+}
+
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+
+async function loadData() {
+  document.getElementById('spinner').style.display = 'block';
+  try {
+    const [wData, cacheStatus] = await Promise.all([
+      fetch('/api/cache/workorders').then(r=>r.json()),
+      checkCacheStatus()
+    ]);
+    allWorkorders = Array.isArray(wData) ? wData : [];
+    document.getElementById('spinner').style.display = 'none';
+
+    if (!allWorkorders.length) {
+      document.getElementById('visibleCount').textContent = '0';
+      return;
+    }
+
+    buildStatusChips();
+    buildClassChips();
+    applyAndRender();
+
+    // Keskitä kartalle
+    const lats = allWorkorders.filter(w=>w.latitude&&parseFloat(w.latitude)!==0).map(w=>parseFloat(w.latitude));
+    const lngs = allWorkorders.filter(w=>w.longitude&&parseFloat(w.longitude)!==0).map(w=>parseFloat(w.longitude));
+    if (lats.length) {
+      map.setView([(Math.min(...lats)+Math.max(...lats))/2, (Math.min(...lngs)+Math.max(...lngs))/2], 7);
+    }
+  } catch(err) {
+    document.getElementById('spinner').style.display = 'none';
+    document.getElementById('visibleCount').textContent = 'Virhe: ' + err.message;
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+
+window.addEventListener('load', () => {
+  initMap();
+  loadData();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunni360 — FSM Mittaristo</title>
+<link id="themeFonts" rel="stylesheet" href="">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #fafaf8;
+    --border: #e8e4dd;
+    --accent: #4f9cf9;
+    --accent-hover: #3b8de6;
+    --accent-text: #ffffff;
+    --blue: #4f9cf9;
+    --pink: #f472b6;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --red: #ef4444;
+    --green: #34d399;
+    --text: #1a1814;
+    --muted: #8a8478;
+    --accent2: #a78bfa;
+    --accent3: #f472b6;
+    --accent4: #fb923c;
+    --font-display: 'DM Sans', sans-serif;
+    --font-mono: 'DM Sans', sans-serif;
+    --grid-color: transparent;
+    --chart-grid: rgba(0,0,0,0.06);
+    --shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); min-height: 100vh; }
+  body::before { display: none; }
+  .container { max-width: 1400px; margin: 0 auto; padding: 32px 24px; position: relative; z-index: 1; }
+
+  /* NAV */
+  nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 16px; }
+  .nav-left h1 { font-family: var(--font-display); font-size: 2.2rem; line-height: 1; }
+  .nav-left h1 span { color: var(--accent); font-style: italic; }
+  .nav-left p { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+  .nav-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-link { color: var(--muted); text-decoration: none; font-size: 0.7rem; letter-spacing: 0.08em; padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px; transition: all 0.2s; }
+  .nav-link:hover, .nav-link.active { color: var(--accent); border-color: var(--accent); }
+  .nav-link.active { background: rgba(200,240,96,0.08); }
+
+  /* MODULE NAV */
+  .module-nav { display: flex; gap: 6px; margin-bottom: 28px; flex-wrap: wrap; }
+  .mod-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 5px 14px; font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 4px; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-block; }
+  .mod-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mod-btn.active { background: rgba(200,240,96,0.1); border-color: var(--accent); color: var(--accent); }
+
+  /* PERIOD */
+  .period-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .period-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 6px 16px; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .period-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .period-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+  .period-spacer { flex: 1; }
+  .status-dot { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--muted); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot.live { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .period-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .nav-arrow { background: var(--surface); border: 1px solid var(--border); color: var(--muted); width: 34px; height: 34px; border-radius: 4px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .nav-arrow:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-arrow:disabled { opacity: 0.3; cursor: default; }
+  .period-label { font-family: var(--font-display); font-size: 1.3rem; color: var(--text); min-width: 220px; text-align: center; }
+  .period-label .hl { color: var(--accent); font-style: italic; }
+  .nav-today { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.08em; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .nav-today:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* KPI */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; position: relative; overflow: hidden; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .kpi-card:nth-child(1)::before { background: var(--accent); }
+  .kpi-card:nth-child(2)::before { background: var(--blue); }
+  .kpi-card:nth-child(3)::before { background: var(--orange); }
+  .kpi-card:nth-child(4)::before { background: var(--red); }
+  .kpi-card:nth-child(5)::before { background: var(--purple); }
+  .kpi-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+  .kpi-value { font-family: var(--font-display); font-size: 2.2rem; line-height: 1; }
+  .kpi-value.c1 { color: var(--accent); }
+  .kpi-value.c2 { color: var(--blue); }
+  .kpi-value.c3 { color: var(--orange); }
+  .kpi-value.c4 { color: var(--red); }
+  .kpi-value.c5 { color: var(--purple); }
+  .kpi-sub { margin-top: 6px; font-size: 0.65rem; color: var(--muted); }
+  .kpi-sub .up { color: var(--green); }
+  .kpi-sub .down { color: var(--red); }
+  .kpi-sub .warn { color: var(--orange); }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  /* CARD */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
+  .card-title { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; }
+  .card-title span { color: var(--accent); }
+  .card-badge { font-size: 0.6rem; background: rgba(200,240,96,0.1); border: 1px solid rgba(200,240,96,0.2); color: var(--accent); padding: 2px 8px; border-radius: 10px; }
+  .card-badge.warn { background: rgba(240,168,96,0.1); border-color: rgba(240,168,96,0.2); color: var(--orange); }
+  .card-badge.danger { background: rgba(240,96,96,0.1); border-color: rgba(240,96,96,0.2); color: var(--red); }
+
+  /* BAR ROWS */
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-label { font-size: 0.7rem; color: var(--text); width: 120px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .bar-val { font-size: 0.7rem; color: var(--muted); width: 40px; text-align: right; flex-shrink: 0; }
+
+  /* WORKLOAD TABLE */
+  .workload-grid { display: grid; gap: 10px; }
+  .workload-month { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; }
+  .workload-month-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .workload-month-name { font-family: var(--font-display); font-size: 1.1rem; color: var(--text); }
+  .workload-month-name .hl { color: var(--accent); font-style: italic; }
+  .workload-month-total { font-size: 0.65rem; color: var(--muted); }
+  .workload-bars { display: flex; flex-direction: column; gap: 6px; }
+
+  /* LATE WORK TABLE */
+  .late-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; }
+  .late-table th { color: var(--muted); font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0 8px 10px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 400; }
+  .late-table td { padding: 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .late-table tr:last-child td { border-bottom: none; }
+  .late-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .status-pill { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.6rem; letter-spacing: 0.06em; }
+  .pill-repair { background: rgba(240,96,96,0.15); color: var(--red); border: 1px solid rgba(240,96,96,0.3); }
+  .pill-late { background: rgba(240,168,96,0.15); color: var(--orange); border: 1px solid rgba(240,168,96,0.3); }
+  .pill-open { background: rgba(96,200,240,0.15); color: var(--blue); border: 1px solid rgba(96,200,240,0.3); }
+  .pill-progress { background: rgba(160,96,240,0.15); color: var(--purple); border: 1px solid rgba(160,96,240,0.3); }
+  .pill-done { background: rgba(96,240,168,0.15); color: var(--green); border: 1px solid rgba(96,240,168,0.3); }
+
+  /* PRIO */
+  .prio-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .prio-high { background: var(--red); }
+  .prio-elevated { background: var(--orange); }
+  .prio-normal { background: var(--blue); }
+  .prio-low { background: var(--muted); }
+
+  /* MAP PLACEHOLDER */
+  .map-area { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 20px; min-height: 200px; }
+  .location-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .location-row { display: flex; align-items: center; gap: 10px; }
+  .location-name { font-size: 0.72rem; color: var(--text); flex: 1; }
+  .location-count { font-size: 0.7rem; color: var(--muted); }
+  .location-bar { flex: 2; height: 4px; background: var(--surface); border-radius: 2px; overflow: hidden; }
+  .location-bar-fill { height: 100%; background: var(--blue); border-radius: 2px; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 16px; margin-top: 32px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .section-title::before { content: ''; display: block; width: 20px; height: 1px; background: var(--accent); }
+
+  /* SUMMARY BAND */
+  .summary-band { display: grid; grid-template-columns: repeat(4,1fr); gap: 1px; background: var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+  .summary-cell { background: var(--surface); padding: 14px 18px; text-align: center; }
+  .summary-cell .sv { font-family: var(--font-display); font-size: 1.6rem; }
+  .summary-cell .sl { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+
+  /* CHART CANVAS */
+  canvas { max-height: 220px; }
+
+  /* LOADING */
+  .loading { display: flex; align-items: center; justify-content: center; min-height: 120px; color: var(--muted); font-size: 0.7rem; letter-spacing: 0.1em; }
+  .loading::after { content: ''; display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESPONSIVE */
+  @media (max-width: 1100px) { .kpi-row { grid-template-columns: repeat(3,1fr); } .grid-3 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 720px) { .kpi-row { grid-template-columns: repeat(2,1fr); } .grid-2,.grid-3,.grid-3-1 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-left">
+      <h1>Lunni <span>FSM</span></h1>
+      <p id="navSubtitle">Kenttähuollon mittaristo</p>
+    </div>
+    <div class="nav-right">
+      <span id="cacheInfo" style="font-size:0.62rem;color:var(--muted)"></span>
+      <button id="refreshBtn" onclick="manualRefresh()" class="nav-link" style="cursor:pointer;background:transparent;font-family:var(--font-mono)">⟳ Päivitä data</button>
+      <div class="status-dot"><div class="dot live"></div><span id="lastUpdated">Ladataan...</span></div>
+      <a href="/crm" class="nav-link">CRM</a>
+      <a href="/fsm" class="nav-link active">FSM</a>
+      <a href="/" class="nav-link">Dashboard</a>
+    </div>
+  </nav>
+
+  <!-- PERIOD -->
+  <div class="period-bar">
+    <button class="period-btn" onclick="setPeriod('day')">Päivä</button>
+    <button class="period-btn" onclick="setPeriod('week')">Viikko</button>
+    <button class="period-btn active" onclick="setPeriod('month')">Kuukausi</button>
+    <button class="period-btn" onclick="setPeriod('quarter')">Kvartaali</button>
+    <button class="period-btn" onclick="setPeriod('year')">Vuosi</button>
+    <div class="period-spacer"></div>
+  </div>
+  <div class="period-nav">
+    <button class="nav-arrow" id="prevBtn" onclick="navigate(-1)">←</button>
+    <div class="period-label" id="periodLabel"><span class="hl">Ladataan...</span></div>
+    <button class="nav-arrow" id="nextBtn" onclick="navigate(1)">→</button>
+    <button class="nav-today" onclick="goToday()">Nykyinen</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Huoltosopimukset</div>
+      <div class="kpi-value c1" id="kpiContracts">—</div>
+      <div class="kpi-sub" id="kpiContractsSub">aktiivista</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Laitteet sopimuksilla</div>
+      <div class="kpi-value c2" id="kpiDevices">—</div>
+      <div class="kpi-sub" id="kpiDevicesSub">uniikkia laitetta</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Tehdyt työt</div>
+      <div class="kpi-value c3" id="kpiDone">—</div>
+      <div class="kpi-sub" id="kpiDoneSub">jaksolla</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Myöhässä / Korjausvelka</div>
+      <div class="kpi-value c4" id="kpiLate">—</div>
+      <div class="kpi-sub" id="kpiLateSub">avoimia töitä</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Tuleva työkuorma</div>
+      <div class="kpi-value c5" id="kpiFuture">—</div>
+      <div class="kpi-sub" id="kpiFutureSub">seuraavat 3kk</div>
+    </div>
+  </div>
+
+  <!-- TEHDYT TYÖT + TYÖLAJIT -->
+  <div class="section-title">Tehdyt työt</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span>◆</span> Työt per työlaji <span id="doneClassBadge" class="card-badge">—</span></div>
+      <div id="doneByClass"><div class="loading"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>◆</span> Trendi — Tehdyt työt 12kk</div>
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+
+  <!-- TYÖKUORMAENNUSTE -->
+  <div class="section-title">Työkuormaennuste — Tulevat työt</div>
+  <div class="grid-3">
+    <div class="card" id="workloadMonth0"><div class="loading"></div></div>
+    <div class="card" id="workloadMonth1"><div class="loading"></div></div>
+    <div class="card" id="workloadMonth2"><div class="loading"></div></div>
+  </div>
+
+  <!-- MYÖHÄSSÄ OLEVAT -->
+  <div class="section-title">Myöhässä olevat työt</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span>◆</span> Jouston piirissä <span id="lateFlexBadge" class="card-badge warn">—</span></div>
+      <div id="lateFlexTable"><div class="loading"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>◆</span> Korjausvelka <span id="repairDebtBadge" class="card-badge danger">—</span></div>
+      <div id="repairDebtTable"><div class="loading"></div></div>
+    </div>
+  </div>
+
+  <!-- KORJAUSKEIKAT + SIJAINNIT -->
+  <div class="section-title">Korjauskeikat & Sijainnit</div>
+  <div class="grid-3-1">
+    <div class="card">
+      <div class="card-title"><span>◆</span> Korjauskeikat jaksolla <span id="malfBadge" class="card-badge">—</span></div>
+      <div id="malfunctionData"><div class="loading"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>◆</span> Sijainnit</div>
+      <div id="locationData"><div class="loading"></div></div>
+    </div>
+  </div>
+
+  <!-- VUOSIHUOLTO-ENNUSTE -->
+  <div class="section-title">Vuosihuolto-ennuste — Laitteet per kuukausi</div>
+  <div class="card">
+    <div class="card-title"><span>◆</span> Annual Service — Laitteet tuleville kuukausille</div>
+    <canvas id="annualForecastChart" style="max-height:160px"></canvas>
+  </div>
+
+</div>
+
+<script>
+// ─── TEEMAT ───────────────────────────────────────────────────────────────────
+const THEMES = {
+  dark: {
+    vars: { '--bg':'#0d0f14','--surface':'#13161e','--surface2':'#1a1e28','--border':'#252936','--accent':'#c8f060','--accent-hover':'#d4f57a','--accent-text':'#0d0f14','--blue':'#60c8f0','--pink':'#f060a8','--orange':'#f0a860','--purple':'#a060f0','--red':'#f06060','--green':'#60f0a8','--text':'#e8eaf2','--muted':'#6b7080','--font-display':"'DM Sans', sans-serif",'--font-mono':"'DM Mono', monospace",'--grid-color':'rgba(200,240,96,0.03)','--chart-grid':'rgba(255,255,255,0.05)','--shadow':'0 4px 24px rgba(0,0,0,0.4)' },
+    fonts: "https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap",
+    chartColors: { grid:'rgba(255,255,255,0.05)', tick:'#6b7080' }
+  },
+  light: {
+    vars: { '--bg':'#f7f5f0','--surface':'#ffffff','--surface2':'#f0ede6','--border':'#e2ddd5','--accent':'#c96a2e','--accent-hover':'#b55a20','--accent-text':'#ffffff','--blue':'#2e7ec9','--pink':'#c92e6a','--orange':'#c9962e','--purple':'#6a2ec9','--red':'#c93030','--green':'#2ec96a','--text':'#1a1714','--muted':'#8a8070','--font-display':"'Playfair Display', serif",'--font-mono':"'IBM Plex Mono', monospace",'--grid-color':'rgba(201,106,46,0.04)','--chart-grid':'rgba(0,0,0,0.06)','--shadow':'0 4px 24px rgba(0,0,0,0.08)' },
+    fonts: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap",
+    chartColors: { grid:'rgba(0,0,0,0.06)', tick:'#8a8070' }
+  },
+  postman: {
+    vars: { '--bg':'#fafafa','--surface':'#ffffff','--surface2':'#f0f0f0','--border':'#e5e5e5','--accent':'#ff6c37','--accent-hover':'#e55a25','--accent-text':'#ffffff','--blue':'#0066ff','--pink':'#ff3366','--orange':'#ff9900','--purple':'#7c3aed','--red':'#ff2222','--green':'#00cc66','--text':'#212121','--muted':'#757575','--font-display':"'Sora', sans-serif",'--font-mono':"'JetBrains Mono', monospace",'--grid-color':'rgba(255,108,55,0.03)','--chart-grid':'rgba(0,0,0,0.06)','--shadow':'0 2px 12px rgba(0,0,0,0.08)' },
+    fonts: "https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap",
+    chartColors: { grid:'rgba(0,0,0,0.06)', tick:'#757575' }
+  }
+};
+let activeTheme = 'dark';
+function applyTheme(id) {
+  const t = THEMES[id] || THEMES.dark; activeTheme = id;
+  const r = document.documentElement;
+  Object.entries(t.vars).forEach(([k,v]) => r.style.setProperty(k,v));
+  document.getElementById('themeFonts').href = t.fonts;
+  document.body.style.background = t.vars['--bg'];
+  document.body.style.color = t.vars['--text'];
+  window._themeChartColors = t.chartColors;
+}
+function getCD() { return window._themeChartColors || { grid:'rgba(255,255,255,0.05)', tick:'#6b7080' }; }
+
+// ─── KENTÄT SUOMEKSI ─────────────────────────────────────────────────────────
+const CLASS_FI = {
+  annual_service: 'Vuosihuolto', service: 'Huolto', malfunction: 'Vika/Korjaus',
+  installation: 'Asennus', project: 'Projekti', Kartoitus: 'Kartoitus',
+  Kalibrointi: 'Kalibrointi', 'Matka-aika': 'Matka-aika', '': 'Muu', null: 'Muu'
+};
+const CLASS_COLORS = {
+  annual_service: '--accent', service: '--blue', malfunction: '--red',
+  installation: '--orange', project: '--purple', Kartoitus: '--green',
+  Kalibrointi: '--pink', 'Matka-aika': '--muted'
+};
+const STATUS_FI = {
+  open:'Avoin', in_progress:'Käynnissä', done:'Valmis', repair_deficit:'Korjausvelka',
+  unfinished:'Kesken', billed:'Laskutettu', billing:'Laskutuksessa',
+  revision:'Hyväksytty', odottaavaraosaa:'Odottaa varaosaa',
+  'Odottaa keräilyä':'Odottaa keräilyä', picking:'Keräily', 'Keräily valmis':'Keräily valmis',
+  archived:'Arkistoitu'
+};
+const PRIO_COLORS = { high:'--red', elevated:'--orange', normal:'--blue', low:'--muted' };
+const MONTHS_FI = ['Tammikuu','Helmikuu','Maaliskuu','Huhtikuu','Toukokuu','Kesäkuu','Heinäkuu','Elokuu','Syyskuu','Lokakuu','Marraskuu','Joulukuu'];
+const MONTHS_SHORT = ['Tam','Hel','Maa','Huh','Tou','Kes','Hei','Elo','Syy','Lok','Mar','Jou'];
+
+// ─── AIKAJAKSO ────────────────────────────────────────────────────────────────
+let currentPeriod = 'month';
+let currentOffset = 0;
+let charts = {};
+
+function setPeriod(p) {
+  currentPeriod = p; currentOffset = 0;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === ({day:'päivä',week:'viikko',month:'kuukausi',quarter:'kvartaali',year:'vuosi'}[p])));
+  loadData();
+}
+
+function navigate(dir) { currentOffset += dir; updateNextBtn(); loadData(); }
+function goToday() { currentOffset = 0; updateNextBtn(); loadData(); }
+function updateNextBtn() { document.getElementById('nextBtn').disabled = currentOffset >= 0; }
+
+function getPeriodRange() {
+  const now = new Date();
+  let start, end, label;
+  if (currentPeriod === 'month') {
+    const d = new Date(now.getFullYear(), now.getMonth() + currentOffset, 1);
+    start = new Date(d.getFullYear(), d.getMonth(), 1);
+    end = new Date(d.getFullYear(), d.getMonth()+1, 0, 23, 59, 59);
+    label = `<span class="hl">${MONTHS_FI[d.getMonth()]}</span> ${d.getFullYear()}`;
+  } else if (currentPeriod === 'quarter') {
+    const totalM = now.getMonth() + currentOffset*3;
+    const y = now.getFullYear() + Math.floor(totalM/12);
+    const qStart = Math.floor((totalM%12 < 0 ? totalM%12+12 : totalM%12)/3)*3;
+    start = new Date(y, qStart < 0 ? 12+qStart : qStart, 1);
+    end = new Date(y, (qStart < 0 ? 12+qStart : qStart)+3, 0, 23, 59, 59);
+    label = `<span class="hl">Q${Math.floor(start.getMonth()/3)+1}</span> / ${start.getFullYear()}`;
+  } else if (currentPeriod === 'year') {
+    const y = now.getFullYear() + currentOffset;
+    start = new Date(y, 0, 1); end = new Date(y, 11, 31, 23, 59, 59);
+    label = `<span class="hl">${y}</span>`;
+  } else if (currentPeriod === 'week') {
+    const d = new Date(now); d.setDate(d.getDate() + currentOffset*7);
+    const day = d.getDay() || 7;
+    start = new Date(d); start.setDate(d.getDate() - day + 1); start.setHours(0,0,0,0);
+    end = new Date(start); end.setDate(start.getDate()+6); end.setHours(23,59,59);
+    const wn = getWeekNumber(start);
+    label = `Viikko <span class="hl">${wn}</span> / ${start.getFullYear()}`;
+  } else {
+    const d = new Date(now); d.setDate(d.getDate() + currentOffset);
+    start = new Date(d); start.setHours(0,0,0,0);
+    end = new Date(d); end.setHours(23,59,59);
+    label = `<span class="hl">${d.getDate()}.${d.getMonth()+1}.${d.getFullYear()}</span>`;
+  }
+  return { start, end, label };
+}
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+  return Math.ceil((((date - new Date(Date.UTC(date.getUTCFullYear(),0,1)))/86400000) + 1)/7);
+}
+
+function fmtDate(d) { return d.toISOString().slice(0,19).replace('T',' '); }
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function apiFetch(path) {
+  const r = await fetch(path); return r.json();
+}
+
+async function lunniFetch(endpoint, params = {}) {
+  const qs = new URLSearchParams({ limit: 1000, ...params }).toString();
+  const r = await fetch(`/api/${endpoint}?${qs}`);
+  return r.json();
+}
+
+// Paginated fetch — hakee kaikki sivut
+async function lunniAll(endpoint, params = {}) {
+  let all = [], page = 0, batch;
+  do {
+    batch = await lunniFetch(endpoint, { ...params, page, limit: 1000 });
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    all = all.concat(batch);
+    page++;
+  } while (batch.length === 1000);
+  return all;
+}
+
+// ─── APUVÄLINEET ─────────────────────────────────────────────────────────────
+function getVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function colorOf(varName) { return getVar(varName); }
+
+function classColor(cls) {
+  const v = CLASS_COLORS[cls] || '--muted';
+  return colorOf(v);
+}
+
+function inRange(dateStr, start, end) {
+  if (!dateStr || dateStr.startsWith('0000')) return false;
+  const d = new Date(dateStr.replace(' ','T'));
+  return d >= start && d <= end;
+}
+
+function isLate(wo) {
+  if (!wo.target_month || !wo.target_year) return false;
+  const now = new Date();
+  const targetEnd = new Date(wo.target_year, wo.target_month - 1 + 1, 0);
+  const doneStatuses = ['done','billed','billing','revision','archived'];
+  return targetEnd < now && !doneStatuses.includes(wo.status);
+}
+
+function buildBarRows(data, totalMax, colorVar) {
+  if (!data || data.length === 0) return '<div style="color:var(--muted);font-size:0.7rem;padding:8px 0">Ei töitä jaksolla</div>';
+  const maxVal = Math.max(...data.map(d => d.count), 1);
+  return data.map(d => `
+    <div class="bar-row">
+      <div class="bar-label" title="${d.label}">${d.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(d.count/maxVal*100).toFixed(1)}%;background:${colorOf(colorVar||'--accent')}"></div></div>
+      <div class="bar-val">${d.count}</div>
+    </div>`).join('');
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// ─── PÄÄLATAUS ────────────────────────────────────────────────────────────────
+let allWorkorders = null;
+let allSchedules = null;
+
+async function loadData() {
+  const { start, end, label } = getPeriodRange();
+  document.getElementById('periodLabel').innerHTML = label;
+  updateNextBtn();
+
+  // Hae cachesta (tai uudelleen jos nollattu)
+  if (!allWorkorders) {
+    const [wData, sData, cacheStatus] = await Promise.all([
+      fetch('/api/cache/workorders').then(r => r.json()),
+      fetch('/api/cache/serviceschedules').then(r => r.json()),
+      checkCacheStatus()
+    ]);
+    allWorkorders = Array.isArray(wData) ? wData : [];
+    allSchedules = Array.isArray(sData) ? sData : [];
+
+    const info = document.getElementById('cacheInfo');
+    if (info && cacheStatus && cacheStatus.updated) {
+      info.textContent = 'Data: ' + new Date(cacheStatus.updated).toLocaleString('fi-FI');
+    }
+    if (!allWorkorders.length) {
+      document.getElementById('lastUpdated').textContent = 'Ei cachea — paina Päivitä data';
+    }
+  }
+
+  document.getElementById('lastUpdated').textContent = allWorkorders.length + ' työmääräintä ladattu';
+
+  renderKPIs(start, end);
+  renderDoneByClass(start, end);
+  renderTrend();
+  renderWorkload();
+  renderLate();
+  renderMalfunctions(start, end);
+  renderLocations(start, end);
+  renderAnnualForecast();
+}
+
+// ─── KPI ──────────────────────────────────────────────────────────────────────
+function renderKPIs(start, end) {
+  const wos = allWorkorders;
+  const scheds = allSchedules;
+
+  // Huoltosopimukset
+  const activeScheds = scheds.filter(s => s.is_active == 1);
+  document.getElementById('kpiContracts').textContent = activeScheds.length;
+  document.getElementById('kpiContractsSub').textContent = 'aktiivista service schedulea';
+
+  // Laitteet sopimuksilla
+  const deviceIds = new Set(activeScheds.map(s => s.device_id).filter(Boolean));
+  document.getElementById('kpiDevices').textContent = deviceIds.size;
+  document.getElementById('kpiDevicesSub').textContent = 'uniikkia laitetta';
+
+  // Tehdyt työt jaksolla
+  const doneStatuses = ['done','billed','billing','revision','archived'];
+  const doneInPeriod = wos.filter(w => doneStatuses.includes(w.status) && inRange(w.begins, start, end));
+  document.getElementById('kpiDone').textContent = doneInPeriod.length;
+  document.getElementById('kpiDoneSub').textContent = 'valmistui jaksolla';
+
+  // Myöhässä / korjausvelka
+  const lateWos = wos.filter(w => isLate(w));
+  const repairDebt = wos.filter(w => w.status === 'repair_deficit');
+  const totalLate = lateWos.length + repairDebt.length;
+  document.getElementById('kpiLate').textContent = totalLate;
+  document.getElementById('kpiLateSub').innerHTML = `<span class="warn">${lateWos.length} jousto</span> / <span class="down">${repairDebt.length} korjausvelka</span>`;
+
+  // Tuleva työkuorma seuraavat 3kk
+  const now = new Date();
+  const future3 = wos.filter(w => {
+    if (!w.target_month || !w.target_year) return false;
+    const wDate = new Date(w.target_year, w.target_month - 1, 1);
+    const limit = new Date(now.getFullYear(), now.getMonth() + 3, 1);
+    return wDate >= new Date(now.getFullYear(), now.getMonth(), 1) && wDate < limit && !doneStatuses.includes(w.status);
+  });
+  document.getElementById('kpiFuture').textContent = future3.length;
+  document.getElementById('kpiFutureSub').textContent = `töitä tulossa (${MONTHS_SHORT[now.getMonth()]}–${MONTHS_SHORT[(now.getMonth()+2)%12]})`;
+}
+
+// ─── TEHDYT PER TYÖLAJI ───────────────────────────────────────────────────────
+function renderDoneByClass(start, end) {
+  const doneStatuses = ['done','billed','billing','revision','archived'];
+  const done = allWorkorders.filter(w => doneStatuses.includes(w.status) && inRange(w.begins, start, end));
+  const byClass = {};
+  done.forEach(w => { const c = w.classification || ''; byClass[c] = (byClass[c]||0)+1; });
+  const sorted = Object.entries(byClass).sort((a,b)=>b[1]-a[1]).map(([cls,count])=>({ label: CLASS_FI[cls]||cls||'Muu', count, cls }));
+  document.getElementById('doneClassBadge').textContent = done.length + ' kpl';
+  const max = Math.max(...sorted.map(s=>s.count),1);
+  document.getElementById('doneByClass').innerHTML = sorted.length
+    ? sorted.map(s=>`<div class="bar-row">
+        <div class="bar-label" title="${s.label}">${s.label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(s.count/max*100).toFixed(1)}%;background:${classColor(s.cls)}"></div></div>
+        <div class="bar-val">${s.count}</div>
+      </div>`).join('')
+    : '<div style="color:var(--muted);font-size:0.7rem;padding:8px">Ei töitä jaksolla</div>';
+}
+
+// ─── TRENDI 12KK ─────────────────────────────────────────────────────────────
+function renderTrend() {
+  const now = new Date();
+  const labels = [], doneData = [], annualData = [], malfData = [];
+  for (let i = 11; i >= 0; i--) {
+    const m = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const mEnd = new Date(m.getFullYear(), m.getMonth()+1, 0, 23,59,59);
+    labels.push(MONTHS_SHORT[m.getMonth()]);
+    const doneStatuses = ['done','billed','billing','revision','archived'];
+    const inM = allWorkorders.filter(w => inRange(w.begins, m, mEnd));
+    doneData.push(inM.filter(w=>doneStatuses.includes(w.status)).length);
+    annualData.push(inM.filter(w=>w.classification==='annual_service').length);
+    malfData.push(inM.filter(w=>w.classification==='malfunction').length);
+  }
+  destroyChart('trend');
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  charts.trend = new Chart(ctx, {
+    type:'bar', data: {
+      labels,
+      datasets: [
+        { label:'Valmistuneet', data:doneData, backgroundColor: colorOf('--accent')+'33', borderColor: colorOf('--accent'), borderWidth:1.5 },
+        { label:'Vuosihuolto', data:annualData, backgroundColor: colorOf('--blue')+'33', borderColor: colorOf('--blue'), borderWidth:1.5 },
+        { label:'Korjauskeikat', data:malfData, backgroundColor: colorOf('--red')+'33', borderColor: colorOf('--red'), borderWidth:1.5 },
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:true,
+      scales: {
+        x: { stacked:false, grid:{color:()=>getCD().grid}, ticks:{color:()=>getCD().tick,font:{size:9}} },
+        y: { grid:{color:()=>getCD().grid}, ticks:{color:()=>getCD().tick,font:{size:9}} }
+      },
+      plugins: { legend:{ labels:{color:()=>getCD().tick,font:{size:9},boxWidth:10} } }
+    }
+  });
+}
+
+// ─── TYÖKUORMAENNUSTE ─────────────────────────────────────────────────────────
+function renderWorkload() {
+  const now = new Date();
+  const doneStatuses = ['done','billed','billing','revision','archived'];
+  for (let i = 0; i < 3; i++) {
+    const m = new Date(now.getFullYear(), now.getMonth()+i, 1);
+    const yr = m.getFullYear(), mo = m.getMonth()+1;
+    const wos = allWorkorders.filter(w => w.target_year == yr && w.target_month == mo && !doneStatuses.includes(w.status));
+    const byClass = {};
+    wos.forEach(w => { const c = w.classification||''; byClass[c]=(byClass[c]||0)+1; });
+    const sorted = Object.entries(byClass).sort((a,b)=>b[1]-a[1]);
+    const max = Math.max(...sorted.map(s=>s[1]),1);
+    const isCurrentMonth = i === 0;
+    document.getElementById(`workloadMonth${i}`).innerHTML = `
+      <div class="card-title">
+        <span>◆</span>
+        <span style="font-family:var(--font-display);font-size:1rem;color:var(--${isCurrentMonth?'accent':'text'});font-style:italic">${MONTHS_FI[m.getMonth()]} ${yr}</span>
+        <span class="card-badge${isCurrentMonth?' ':' warn'}">${wos.length} työtä</span>
+      </div>
+      ${sorted.length ? sorted.map(([cls,cnt])=>`
+        <div class="bar-row">
+          <div class="bar-label">${CLASS_FI[cls]||cls||'Muu'}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(cnt/max*100).toFixed(1)}%;background:${classColor(cls)}"></div></div>
+          <div class="bar-val">${cnt}</div>
+        </div>`).join('') : '<div style="color:var(--muted);font-size:0.7rem;padding:8px">Ei avoimia töitä</div>'}`;
+  }
+}
+
+// ─── MYÖHÄSSÄ OLEVAT ─────────────────────────────────────────────────────────
+function renderLate() {
+  const now = new Date();
+  const doneStatuses = ['done','billed','billing','revision','archived'];
+
+  // Jouston piirissä: open/in_progress + target kuukausi mennyt ohi
+  const lateFlex = allWorkorders.filter(w => {
+    if (!w.target_month || !w.target_year) return false;
+    const tEnd = new Date(w.target_year, w.target_month, 0);
+    return tEnd < now && !doneStatuses.includes(w.status) && w.status !== 'repair_deficit';
+  }).sort((a,b) => new Date(a.target_year, a.target_month-1,1) - new Date(b.target_year, b.target_month-1,1));
+
+  // Korjausvelka
+  const repairDebt = allWorkorders.filter(w => w.status === 'repair_deficit')
+    .sort((a,b) => new Date(a.target_year||2000, (a.target_month||1)-1,1) - new Date(b.target_year||2000, (b.target_month||1)-1,1));
+
+  document.getElementById('lateFlexBadge').textContent = lateFlex.length + ' kpl';
+  document.getElementById('repairDebtBadge').textContent = repairDebt.length + ' kpl';
+
+  const buildTable = (wos, pillClass) => {
+    if (!wos.length) return '<div style="color:var(--muted);font-size:0.7rem;padding:8px">Ei myöhässä olevia töitä ✓</div>';
+    const rows = wos.slice(0,10).map(w => {
+      const mo = w.target_month && w.target_year ? `${w.target_month}/${w.target_year}` : '—';
+      const prioColor = colorOf(PRIO_COLORS[w.priority]||'--muted');
+      const cls = CLASS_FI[w.classification]||w.classification||'—';
+      return `<tr>
+        <td><span class="prio-dot" style="background:${prioColor}"></span>${w.name ? w.name.substring(0,28)+(w.name.length>28?'…':'') : 'ID '+w.id}</td>
+        <td>${cls}</td>
+        <td>${mo}</td>
+        <td><span class="status-pill ${pillClass}">${STATUS_FI[w.status]||w.status}</span></td>
+      </tr>`;
+    }).join('');
+    const more = wos.length > 10 ? `<tr><td colspan="4" style="color:var(--muted);font-size:0.65rem;padding-top:8px">+ ${wos.length-10} muuta...</td></tr>` : '';
+    return `<table class="late-table"><thead><tr><th>Työ</th><th>Tyylaji</th><th>Kohde kk</th><th>Status</th></tr></thead><tbody>${rows}${more}</tbody></table>`;
+  };
+
+  document.getElementById('lateFlexTable').innerHTML = buildTable(lateFlex, 'pill-late');
+  document.getElementById('repairDebtTable').innerHTML = buildTable(repairDebt, 'pill-repair');
+}
+
+// ─── KORJAUSKEIKAT ────────────────────────────────────────────────────────────
+function renderMalfunctions(start, end) {
+  const malfs = allWorkorders.filter(w => w.classification === 'malfunction' && inRange(w.begins, start, end));
+  document.getElementById('malfBadge').textContent = malfs.length + ' kpl';
+
+  // Prioriteettijakauma
+  const byPrio = {};
+  malfs.forEach(w => { const p = w.priority||'normal'; byPrio[p]=(byPrio[p]||0)+1; });
+  const prioOrder = ['high','elevated','normal','low'];
+  const prioFI = { high:'Korkea', elevated:'Korotettu', normal:'Normaali', low:'Matala' };
+  const maxPrio = Math.max(...Object.values(byPrio),1);
+
+  // Status-jakauma
+  const byStatus = {};
+  malfs.forEach(w => { byStatus[w.status]=(byStatus[w.status]||0)+1; });
+
+  if (!malfs.length) {
+    document.getElementById('malfunctionData').innerHTML = '<div style="color:var(--muted);font-size:0.7rem;padding:8px">Ei korjauskeikkoja jaksolla</div>';
+    return;
+  }
+
+  document.getElementById('malfunctionData').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px">Prioriteetti</div>
+        ${prioOrder.filter(p=>byPrio[p]).map(p=>`
+          <div class="bar-row">
+            <div class="bar-label"><span class="prio-dot prio-${p}"></span>${prioFI[p]}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(byPrio[p]/maxPrio*100).toFixed(1)}%;background:${colorOf(PRIO_COLORS[p]||'--muted')}"></div></div>
+            <div class="bar-val">${byPrio[p]}</div>
+          </div>`).join('')}
+      </div>
+      <div>
+        <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px">Status</div>
+        ${Object.entries(byStatus).sort((a,b)=>b[1]-a[1]).map(([s,cnt])=>`
+          <div class="bar-row">
+            <div class="bar-label">${STATUS_FI[s]||s}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(cnt/malfs.length*100).toFixed(1)}%;background:${colorOf('--red')}"></div></div>
+            <div class="bar-val">${cnt}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ─── SIJAINNIT ────────────────────────────────────────────────────────────────
+function renderLocations(start, end) {
+  const wos = allWorkorders.filter(w => inRange(w.begins, start, end));
+  // Ryhmittele koordinaattien perusteella kaupungeittain (approx)
+  const locMap = {};
+  wos.forEach(w => {
+    if (!w.latitude || !w.longitude) return;
+    // Pyöristä koordinaatit ~kaupunki-tarkkuuteen
+    const lat = Math.round(parseFloat(w.latitude)*10)/10;
+    const lng = Math.round(parseFloat(w.longitude)*10)/10;
+    const key = `${lat},${lng}`;
+    locMap[key] = (locMap[key]||0)+1;
+  });
+
+  const sorted = Object.entries(locMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxLoc = sorted.length ? sorted[0][1] : 1;
+
+  if (!sorted.length) {
+    document.getElementById('locationData').innerHTML = '<div style="color:var(--muted);font-size:0.7rem;padding:8px">Ei sijaintitietoja</div>';
+    return;
+  }
+
+  document.getElementById('locationData').innerHTML = `
+    <div style="font-size:0.6rem;color:var(--muted);margin-bottom:10px">${wos.filter(w=>w.latitude).length}/${wos.length} töissä sijainti</div>
+    ${sorted.map(([key,cnt],i)=>{
+      const [lat,lng] = key.split(',');
+      return `<div class="bar-row" style="margin-bottom:8px">
+        <div class="bar-label" style="font-size:0.65rem;color:var(--muted)">${lat}°N ${lng}°E</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(cnt/maxLoc*100).toFixed(1)}%;background:${colorOf('--blue')}"></div></div>
+        <div class="bar-val">${cnt}</div>
+      </div>`;
+    }).join('')}
+    <div style="font-size:0.6rem;color:var(--muted);margin-top:10px;font-style:italic">↑ Koordinaattiryhmät (kpi.lunni.fi → kartta tulossa HTTPS:n jälkeen)</div>`;
+}
+
+// ─── VUOSIHUOLTO-ENNUSTE ──────────────────────────────────────────────────────
+function renderAnnualForecast() {
+  const now = new Date();
+  const labels = [], data = [], colors = [];
+  for (let i = 0; i < 12; i++) {
+    const m = new Date(now.getFullYear(), now.getMonth()+i, 1);
+    const yr = m.getFullYear(), mo = m.getMonth()+1;
+    const count = allWorkorders.filter(w =>
+      w.classification === 'annual_service' &&
+      w.target_year == yr && w.target_month == mo
+    ).length;
+    labels.push(`${MONTHS_SHORT[m.getMonth()]} ${yr !== now.getFullYear() ? yr : ''}`);
+    data.push(count);
+    colors.push(i === 0 ? colorOf('--accent') : colorOf('--blue')+'99');
+  }
+  destroyChart('annualForecast');
+  const ctx = document.getElementById('annualForecastChart').getContext('2d');
+  charts.annualForecast = new Chart(ctx, {
+    type:'bar', data:{
+      labels,
+      datasets:[{ label:'Vuosihuolto-työmääräimet', data, backgroundColor:colors, borderRadius:3 }]
+    },
+    options:{ responsive:true, maintainAspectRatio:true,
+      scales:{
+        x:{ grid:{color:()=>getCD().grid}, ticks:{color:()=>getCD().tick,font:{size:9}} },
+        y:{ grid:{color:()=>getCD().grid}, ticks:{color:()=>getCD().tick,font:{size:9},stepSize:1} }
+      },
+      plugins:{ legend:{display:false} }
+    }
+  });
+}
+
+// ─── CACHE & PÄIVITYS ────────────────────────────────────────────────────────
+let refreshTimer = null;
+
+async function checkCacheStatus() {
+  try {
+    const r = await fetch('/api/cache/status');
+    const s = await r.json();
+    updateRefreshBtn(s);
+    return s;
+  } catch { return null; }
+}
+
+function updateRefreshBtn(status) {
+  const btn = document.getElementById('refreshBtn');
+  const info = document.getElementById('cacheInfo');
+  if (!btn) return;
+  if (status.refreshing) {
+    btn.disabled = true; btn.textContent = '⟳ Päivitetään...'; btn.style.opacity = '0.5';
+    setTimeout(checkCacheStatus, 3000); return;
+  }
+  if (status.canRefresh) {
+    btn.disabled = false; btn.textContent = '⟳ Päivitä data'; btn.style.opacity = '1';
+  } else {
+    btn.disabled = true; btn.textContent = `⟳ Odota ${status.secondsUntilRefresh}s`; btn.style.opacity = '0.5';
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => {
+      if (status.secondsUntilRefresh > 0) { status.secondsUntilRefresh--; btn.textContent = `⟳ Odota ${status.secondsUntilRefresh}s`; }
+      else { clearInterval(refreshTimer); btn.disabled = false; btn.textContent = '⟳ Päivitä data'; btn.style.opacity = '1'; }
+    }, 1000);
+  }
+  if (info && status.updated) info.textContent = 'Data: ' + new Date(status.updated).toLocaleString('fi-FI');
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true; btn.textContent = '⟳ Käynnistetään...';
+  try {
+    const r = await fetch('/api/cache/refresh', { method: 'POST' });
+    const d = await r.json();
+    if (d.error === 'rate_limited') {
+      updateRefreshBtn({ canRefresh: false, secondsUntilRefresh: d.secondsRemaining, refreshing: false });
+    } else if (d.success) {
+      btn.textContent = '⟳ Päivitetään...';
+      const poll = setInterval(async () => {
+        const s = await checkCacheStatus();
+        if (s && !s.refreshing) { clearInterval(poll); allWorkorders = null; allSchedules = null; await loadData(); }
+      }, 2000);
+    }
+  } catch { btn.disabled = false; btn.textContent = '⟳ Päivitä data'; }
+}
+async function initTheme() {
+  try {
+    const r = await fetch('/api/token');
+    const data = await r.json();
+    applyTheme(data.theme || 'dark');
+  } catch(e) { applyTheme('dark'); }
+}
+
+window.addEventListener('load', async () => {
+  await initTheme();
+  await loadData();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunni360 — Dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #fafaf8;
+    --border: #e8e4dd;
+    --accent: #4f9cf9;
+    --accent-hover: #3b8de6;
+    --accent-text: #ffffff;
+    --blue: #4f9cf9;
+    --pink: #f472b6;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --red: #ef4444;
+    --green: #34d399;
+    --text: #1a1814;
+    --muted: #8a8478;
+    --font-display: 'DM Sans', sans-serif;
+    --font-mono: 'DM Sans', sans-serif;
+    --grid-color: transparent;
+    --chart-grid: rgba(0,0,0,0.06);
+    --shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:var(--fm); }
+
+/* TOPBAR */
+.topbar { height:48px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; padding:0 16px; flex-shrink:0; z-index:200; position:relative; }
+.logo { font-family:var(--fd); font-size:1.2rem; }
+.logo span { color:var(--accent); font-style:italic; }
+.divider { width:1px; height:20px; background:var(--border); }
+.nav-link { color:var(--muted); text-decoration:none; font-size:0.63rem; letter-spacing:0.08em; padding:5px 10px; border:1px solid var(--border); border-radius:4px; transition:all 0.2s; background:transparent; font-family:var(--fm); cursor:pointer; }
+.nav-link:hover,.nav-link.active { color:var(--accent); border-color:var(--accent); background:rgba(200,240,96,0.06); }
+.topbar-right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+/* MODULE TABS */
+.module-tabs { display:flex; gap:2px; background:var(--surface2); padding:3px; border-radius:6px; }
+.module-tab { padding:4px 12px; font-size:0.62rem; letter-spacing:0.08em; border-radius:4px; cursor:pointer; color:var(--muted); transition:all 0.2s; border:none; background:transparent; font-family:var(--fm); }
+.module-tab.active { background:var(--accent); color:#0d0f14; font-weight:500; }
+
+/* MAIN AREA */
+.main { display:flex; flex-direction:column; height:calc(100vh - 48px); overflow:hidden; position:relative; }
+
+/* WIDGET GRID */
+.grid-area { flex:1; overflow-y:auto; padding:16px; min-height:0; }
+.grid-area::-webkit-scrollbar { width:4px; }
+.grid-area::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+.widget-grid { 
+  display:grid; 
+  grid-template-columns:repeat(4,1fr); 
+  gap:12px;
+  auto-rows:180px;
+}
+
+/* WIDGET SIZES */
+.widget { border-radius:8px; background:var(--surface); border:1px solid var(--border); overflow:hidden; position:relative; transition:box-shadow 0.2s, border-color 0.2s; cursor:grab; }
+.widget:active { cursor:grabbing; }
+.widget:hover { border-color:#353848; box-shadow:0 4px 20px rgba(0,0,0,0.3); }
+.widget.size-S { grid-column:span 1; grid-row:span 1; }
+.widget.size-M { grid-column:span 2; grid-row:span 1; }
+.widget.size-L { grid-column:span 4; grid-row:span 2; }
+.widget.sortable-ghost { opacity:0.3; border:2px dashed var(--accent); background:rgba(200,240,96,0.05); }
+.widget.sortable-chosen { box-shadow:0 8px 32px rgba(0,0,0,0.5); z-index:100; }
+
+/* WIDGET HEADER */
+.widget-header { padding:10px 12px 8px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); }
+.widget-title { font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.widget-module-tag { font-size:0.55rem; padding:2px 6px; border-radius:8px; background:rgba(200,240,96,0.1); color:var(--accent); border:1px solid rgba(200,240,96,0.2); }
+.widget-actions { display:flex; gap:4px; opacity:0; transition:opacity 0.2s; }
+.widget:hover .widget-actions { opacity:1; }
+.widget-btn { width:22px; height:22px; border-radius:4px; border:1px solid var(--border); background:var(--surface2); color:var(--muted); font-size:0.6rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
+.widget-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* WIDGET BODY */
+.widget-body { padding:12px; height:calc(100% - 41px); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.widget-body iframe { width:100%; height:100%; border:none; background:transparent; }
+
+/* EMPTY SLOT */
+.empty-slot { border-radius:8px; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; grid-column:span 1; }
+.empty-slot:hover { border-color:var(--accent); background:rgba(200,240,96,0.03); }
+.empty-slot-inner { display:flex; flex-direction:column; align-items:center; gap:6px; color:var(--muted); font-size:0.65rem; }
+.empty-slot-plus { font-size:1.5rem; color:var(--border); }
+.empty-slot:hover .empty-slot-plus { color:var(--accent); }
+
+/* SHELF */
+.shelf { 
+  background:var(--surface); 
+  border-top:1px solid var(--border); 
+  transition:height 0.3s cubic-bezier(0.4,0,0.2,1);
+  overflow:hidden;
+  flex-shrink:0;
+}
+.shelf.open { height:200px; }
+.shelf.closed { height:0; }
+.shelf-toggle { 
+  position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+  background:var(--surface); border:1px solid var(--border); border-bottom:none;
+  padding:4px 20px; border-radius:6px 6px 0 0; cursor:pointer;
+  font-size:0.6rem; color:var(--muted); letter-spacing:0.1em;
+  display:flex; align-items:center; gap:6px; transition:all 0.2s;
+  z-index:100;
+}
+.shelf-toggle:hover { color:var(--accent); border-color:var(--accent); }
+.shelf-toggle .arrow { transition:transform 0.3s; }
+.shelf-toggle.open .arrow { transform:rotate(180deg); }
+.shelf-inner { padding:12px 16px; height:100%; display:flex; flex-direction:column; gap:8px; }
+.shelf-title { font-size:0.58rem; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; }
+.shelf-widgets { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; flex:1; align-items:center; }
+.shelf-widgets::-webkit-scrollbar { height:3px; }
+.shelf-widgets::-webkit-scrollbar-thumb { background:var(--border); }
+.shelf-widget { min-width:140px; height:80px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; cursor:grab; flex-shrink:0; transition:all 0.2s; position:relative; overflow:hidden; }
+.shelf-widget:hover { border-color:var(--accent); }
+.shelf-widget-name { font-size:0.65rem; color:var(--text); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.shelf-widget-meta { font-size:0.58rem; color:var(--muted); }
+.shelf-widget-restore { position:absolute; top:6px; right:6px; width:18px; height:18px; border-radius:3px; background:rgba(200,240,96,0.1); border:1px solid rgba(200,240,96,0.3); color:var(--accent); font-size:0.55rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.shelf-add { min-width:120px; height:80px; border:2px dashed var(--border); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; flex-shrink:0; transition:all 0.2s; color:var(--muted); font-size:0.62rem; }
+.shelf-add:hover { border-color:var(--accent); color:var(--accent); }
+
+/* SIZE SELECTOR */
+.size-selector { display:flex; gap:3px; }
+.size-opt { padding:2px 7px; font-size:0.58rem; border:1px solid var(--border); border-radius:3px; cursor:pointer; color:var(--muted); background:var(--surface2); transition:all 0.15s; }
+.size-opt.active { border-color:var(--accent); color:var(--accent); background:rgba(200,240,96,0.08); }
+
+/* LOADING */
+.widget-loading { display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--muted); font-size:0.65rem; }
+.spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* GRID EMPTY STATE */
+.grid-empty { grid-column:span 4; display:flex; flex-direction:column; align-items:center; justify-content:center; height:300px; gap:12px; color:var(--muted); }
+.grid-empty-title { font-family:var(--fd); font-size:1.5rem; color:var(--text); }
+.grid-empty-sub { font-size:0.7rem; text-align:center; max-width:300px; line-height:1.6; }
+
+/* NOTIFY */
+.notify { position:fixed; top:60px; right:16px; background:var(--surface); border:1px solid var(--accent); border-radius:6px; padding:10px 16px; font-size:0.7rem; color:var(--accent); z-index:1000; transform:translateY(-10px); opacity:0; transition:all 0.3s; pointer-events:none; }
+.notify.show { transform:translateY(0); opacity:1; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Lunni <span>360</span></div>
+  <div class="divider"></div>
+  <div class="module-tabs" id="moduleTabs">
+    <button class="module-tab active" onclick="switchModule('crm')">CRM</button>
+    <button class="module-tab" onclick="switchModule('fsm')">FSM</button>
+    <button class="module-tab" onclick="switchModule('map')">Kartta</button>
+    <button class="module-tab" onclick="switchModule('eam')">EAM</button>
+    <button class="module-tab" onclick="switchModule('esm')">ESM</button>
+  </div>
+  <div class="topbar-right">
+    <button class="nav-link" onclick="openWizard()">+ Uusi mittari</button>
+    <a href="/superadmin" class="nav-link">Admin</a>
+    <button class="nav-link" onclick="toggleEditMode()" id="editBtn">✎ Muokkaa</button>
+  </div>
+</div>
+
+<div class="main" id="main">
+  <div class="grid-area">
+    <div class="widget-grid" id="widgetGrid"></div>
+  </div>
+
+  <div class="shelf closed" id="shelf">
+    <div class="shelf-inner">
+      <div class="shelf-title">Piilotetut mittarit</div>
+      <div class="shelf-widgets" id="shelfWidgets"></div>
+    </div>
+  </div>
+
+  <div class="shelf-toggle" id="shelfToggle" onclick="toggleShelf()">
+    <span id="shelfCount">0 piilotettua</span>
+    <span class="arrow">▲</span>
+  </div>
+</div>
+
+<div class="notify" id="notify"></div>
+
+<!-- WIZARD MODAL -->
+<div id="wizardOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;display:none;align-items:center;justify-content:center">
+  <iframe id="wizardFrame" src="/wizard" style="width:800px;max-width:95vw;height:85vh;border:none;border-radius:12px;background:var(--surface)"></iframe>
+</div>
+
+<script>
+// ─── TILA ─────────────────────────────────────────────────────────────────────
+let currentModule = 'crm';
+let editMode = false;
+let layout = { visible: [], hidden: [] };
+let allWidgets = {};
+let sortable = null;
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  await loadWidgetsAndLayout();
+  renderGrid();
+  renderShelf();
+  initSortable();
+
+  // Kuuntele wizard-viestejä
+  window.addEventListener('message', e => {
+    if (e.data?.type === 'widget-saved') {
+      closeWizard();
+      loadWidgetsAndLayout().then(() => { renderGrid(); renderShelf(); });
+      showNotify('Mittari tallennettu!');
+    }
+    if (e.data?.type === 'wizard-close') closeWizard();
+  });
+});
+
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+async function loadWidgetsAndLayout() {
+  try {
+    const [wRes, lRes] = await Promise.all([
+      fetch('/api/widgets').then(r => r.json()),
+      fetch('/api/layout/' + currentModule).then(r => r.json())
+    ]);
+    allWidgets = wRes.widgets || {};
+    layout = lRes || { visible: [], hidden: [] };
+  } catch {
+    allWidgets = {};
+    layout = { visible: [], hidden: [] };
+  }
+}
+
+async function saveLayout() {
+  await fetch('/api/layout/' + currentModule, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(layout)
+  });
+}
+
+// ─── MODULE SWITCH ────────────────────────────────────────────────────────────
+async function switchModule(mod) {
+  currentModule = mod;
+  document.querySelectorAll('.module-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent.toLowerCase() === mod);
+  });
+  await loadWidgetsAndLayout();
+  renderGrid();
+  renderShelf();
+  initSortable();
+}
+
+// ─── RENDER GRID ──────────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('widgetGrid');
+  const visible = layout.visible || [];
+
+  if (!visible.length) {
+    grid.innerHTML = `
+      <div class="grid-empty">
+        <div class="grid-empty-title">Ei mittareita</div>
+        <div class="grid-empty-sub">Lisää mittareita piilohyllystä tai luo uusi wizard-työkalulla</div>
+        <button class="nav-link" onclick="openWizard()" style="margin-top:8px">+ Uusi mittari</button>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = visible.map(item => {
+    const w = allWidgets[item.widgetId];
+    if (!w) return '';
+    return buildWidgetHTML(w, item);
+  }).join('');
+}
+
+function buildWidgetHTML(w, item) {
+  const size = item.size || 'M';
+  const moduleTag = w.module ? `<span class="widget-module-tag">${w.module.toUpperCase()}</span>` : '';
+  const sizeOpts = ['S','M','L'].map(s =>
+    `<span class="size-opt ${s===size?'active':''}" onclick="changeSize('${w.id}','${s}',event)">${s}</span>`
+  ).join('');
+
+  return `<div class="widget size-${size}" data-id="${w.id}" id="widget-${w.id}">
+    <div class="widget-header">
+      <span class="widget-title">${w.name}</span>
+      ${moduleTag}
+      <div class="widget-actions">
+        <div class="size-selector">${sizeOpts}</div>
+        <button class="widget-btn" onclick="hideWidget('${w.id}',event)" title="Piilota">↓</button>
+      </div>
+    </div>
+    <div class="widget-body" id="body-${w.id}">
+      ${renderWidgetContent(w)}
+    </div>
+  </div>`;
+}
+
+function renderWidgetContent(w) {
+  if (w.type === 'builtin') {
+    return `<div class="widget-loading"><div class="spinner"></div><span>Ladataan...</span></div>`;
+  }
+  if (w.html) {
+    const blob = new Blob([w.html], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    return `<iframe src="${url}" sandbox="allow-scripts"></iframe>`;
+  }
+  return `<div class="widget-loading" style="color:var(--muted);font-size:0.65rem;text-align:center;padding:8px">${w.description||'Ei sisältöä'}</div>`;
+}
+
+// ─── RENDER SHELF ─────────────────────────────────────────────────────────────
+function renderShelf() {
+  const shelf = document.getElementById('shelfWidgets');
+  const hidden = layout.hidden || [];
+  document.getElementById('shelfCount').textContent = hidden.length + ' piilotettua';
+
+  const addBtn = `<div class="shelf-add" onclick="openWizard()">
+    <span style="font-size:1.2rem;color:var(--border)">+</span>
+    <span>Uusi mittari</span>
+  </div>`;
+
+  if (!hidden.length) {
+    shelf.innerHTML = addBtn;
+    return;
+  }
+
+  shelf.innerHTML = hidden.map(wId => {
+    const w = allWidgets[wId];
+    if (!w) return '';
+    return `<div class="shelf-widget" data-id="${w.id}">
+      <div class="shelf-widget-name">${w.name}</div>
+      <div class="shelf-widget-meta">${(w.module||'').toUpperCase()} · ${w.type === 'builtin' ? 'Vakio' : 'Mukautettu'}</div>
+      <button class="shelf-widget-restore" onclick="restoreWidget('${w.id}',event)" title="Tuo näkyville">↑</button>
+    </div>`;
+  }).join('') + addBtn;
+}
+
+// ─── WIDGET TOIMINNOT ─────────────────────────────────────────────────────────
+function hideWidget(widgetId, e) {
+  e && e.stopPropagation();
+  layout.visible = layout.visible.filter(i => i.widgetId !== widgetId);
+  if (!layout.hidden.includes(widgetId)) layout.hidden.push(widgetId);
+  saveLayout();
+  renderGrid();
+  renderShelf();
+  showNotify('Mittari piilotettu');
+}
+
+function restoreWidget(widgetId, e) {
+  e && e.stopPropagation();
+  layout.hidden = layout.hidden.filter(id => id !== widgetId);
+  if (!layout.visible.find(i => i.widgetId === widgetId)) {
+    layout.visible.push({ widgetId, size: 'M' });
+  }
+  saveLayout();
+  renderGrid();
+  renderShelf();
+  showNotify('Mittari palautettu');
+}
+
+function changeSize(widgetId, size, e) {
+  e && e.stopPropagation();
+  const item = layout.visible.find(i => i.widgetId === widgetId);
+  if (item) item.size = size;
+  saveLayout();
+  // Päivitä vain tämä widget
+  const el = document.getElementById('widget-' + widgetId);
+  if (el) {
+    el.className = 'widget size-' + size;
+    el.querySelector('.size-selector').querySelectorAll('.size-opt').forEach(o => {
+      o.classList.toggle('active', o.textContent === size);
+    });
+  }
+}
+
+// ─── DRAG & DROP ──────────────────────────────────────────────────────────────
+function initSortable() {
+  if (sortable) sortable.destroy();
+  const grid = document.getElementById('widgetGrid');
+  sortable = Sortable.create(grid, {
+    animation: 200,
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    handle: '.widget-header',
+    filter: '.empty-slot',
+    onEnd: () => {
+      const newOrder = [...grid.querySelectorAll('.widget[data-id]')].map(el => el.dataset.id);
+      layout.visible = newOrder.map(id => layout.visible.find(i => i.widgetId === id) || { widgetId: id, size: 'M' });
+      saveLayout();
+    }
+  });
+}
+
+// ─── SHELF TOGGLE ─────────────────────────────────────────────────────────────
+function toggleShelf() {
+  const shelf = document.getElementById('shelf');
+  const toggle = document.getElementById('shelfToggle');
+  const isOpen = shelf.classList.contains('open');
+  shelf.classList.toggle('open', !isOpen);
+  shelf.classList.toggle('closed', isOpen);
+  toggle.classList.toggle('open', !isOpen);
+}
+
+// ─── EDIT MODE ────────────────────────────────────────────────────────────────
+function toggleEditMode() {
+  editMode = !editMode;
+  document.getElementById('editBtn').textContent = editMode ? '✓ Valmis' : '✎ Muokkaa';
+  document.getElementById('editBtn').style.color = editMode ? 'var(--accent)' : '';
+  document.getElementById('editBtn').style.borderColor = editMode ? 'var(--accent)' : '';
+  document.querySelectorAll('.widget-actions').forEach(el => {
+    el.style.opacity = editMode ? '1' : '';
+  });
+}
+
+// ─── WIZARD ───────────────────────────────────────────────────────────────────
+function openWizard() {
+  const overlay = document.getElementById('wizardOverlay');
+  overlay.style.display = 'flex';
+}
+
+function closeWizard() {
+  document.getElementById('wizardOverlay').style.display = 'none';
+}
+
+document.getElementById('wizardOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('wizardOverlay')) closeWizard();
+});
+
+// ─── NOTIFY ───────────────────────────────────────────────────────────────────
+function showNotify(msg) {
+  const el = document.getElementById('notify');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

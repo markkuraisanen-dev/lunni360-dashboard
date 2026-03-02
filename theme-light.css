@@ -1,0 +1,379 @@
+/* ══════════════════════════════════════════
+   LUNNI360 — LIGHT THEME (DM Sans)
+   Injected by server.js into all HTML pages
+   ══════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Serif+Display:ital@0;1&display=swap');
+
+/* ── ROOT OVERRIDES ── */
+/* Override all dashboard CSS variables */
+:root {
+  --bg: #f7f6f3 !important;
+  --bg-alt: #f0ede8;
+  --surface: #ffffff !important;
+  --surface2: #fafaf8 !important;
+  --surface-hover: #fafaf8;
+  --border: #e8e4dd !important;
+  --border-light: #f0ece6;
+  --text: #1a1814 !important;
+  --text-primary: #1a1814;
+  --text-secondary: #8a8478;
+  --text-muted: #bbb5ac;
+  --muted: #8a8478 !important;
+  --accent: #4f9cf9 !important;
+  --accent-hover: #3b8de6 !important;
+  --accent-text: #ffffff !important;
+  --accent-bg: rgba(79,156,249,0.08);
+  --accent-border: rgba(79,156,249,0.2);
+  --accent2: #a78bfa !important;
+  --accent3: #f472b6 !important;
+  --accent4: #fb923c !important;
+  --blue: #4f9cf9 !important;
+  --green: #34d399 !important;
+  --green-bg: rgba(52,211,153,0.08);
+  --green-border: rgba(52,211,153,0.2);
+  --orange: #fb923c !important;
+  --orange-bg: rgba(251,146,60,0.08);
+  --orange-border: rgba(251,146,60,0.2);
+  --red: #ef4444 !important;
+  --red-bg: rgba(239,68,68,0.06);
+  --red-border: rgba(239,68,68,0.15);
+  --pink: #f472b6 !important;
+  --purple: #a78bfa !important;
+  --star: #f5c842;
+  --font-display: 'DM Sans', sans-serif !important;
+  --font-mono: 'DM Sans', sans-serif !important;
+  --grid-color: transparent !important;
+  --chart-grid: rgba(0,0,0,0.06) !important;
+  --shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+/* ── BODY / BASE ── */
+body {
+  background: var(--bg) !important;
+  color: var(--text-primary) !important;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  background-image: none !important;
+  display: none !important;
+}
+
+/* ── TYPOGRAPHY ── */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary) !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+h1 span { color: var(--accent) !important; }
+p, span, div, td, th, li, label, a { font-family: 'DM Sans', sans-serif; }
+.sub, .subtitle { color: var(--text-secondary) !important; }
+code, .mono, [class*="mono"] {
+  font-family: 'DM Mono', monospace !important;
+}
+
+/* ── CARDS ── */
+.card, [class*="card"] {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--text-primary) !important;
+}
+.card:hover, [class*="card"]:hover {
+  box-shadow: var(--shadow-md) !important;
+}
+.card::before { display: none !important; }
+
+/* ── INPUTS ── */
+input, select, textarea {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
+  font-family: 'DM Sans', sans-serif !important;
+  border-radius: var(--radius-sm) !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-bg) !important;
+  outline: none !important;
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* ── BUTTONS ── */
+.btn, button[class*="btn"] {
+  background: var(--text) !important;
+  color: var(--surface) !important;
+  border: none !important;
+  font-family: 'DM Sans', sans-serif !important;
+  font-weight: 500 !important;
+  border-radius: var(--radius-sm) !important;
+  transition: opacity 0.15s, transform 0.1s !important;
+}
+.btn:hover, button[class*="btn"]:hover {
+  opacity: 0.85 !important;
+}
+.btn:active { transform: scale(0.98) !important; }
+
+/* Period/tab buttons (dashboard) */
+.period-btn.active {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  border-color: var(--accent) !important;
+}
+.nav-link.active {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  background: var(--accent-bg) !important;
+}
+
+.btn-danger {
+  background: var(--red-bg) !important;
+  color: var(--red) !important;
+  border: 1px solid var(--red-border) !important;
+}
+.btn-danger:hover { background: rgba(239,68,68,0.12) !important; }
+.btn-ghost, .btn-secondary {
+  background: var(--surface) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border) !important;
+}
+.btn-ghost:hover, .btn-secondary:hover {
+  color: var(--text-primary) !important;
+  border-color: var(--text-primary) !important;
+}
+
+/* ── BADGES ── */
+.badge-green, [class*="badge-green"] {
+  background: var(--green-bg) !important;
+  color: var(--green) !important;
+}
+.badge-blue, [class*="badge-blue"] {
+  background: var(--accent-bg) !important;
+  color: var(--accent) !important;
+}
+.badge-pink, [class*="badge-pink"] {
+  background: rgba(244,114,182,0.08) !important;
+  color: var(--pink) !important;
+}
+.badge-orange, [class*="badge-orange"] {
+  background: var(--orange-bg) !important;
+  color: var(--orange) !important;
+}
+
+/* ── MESSAGES ── */
+.msg-success, [class*="msg-success"] {
+  background: var(--green-bg) !important;
+  border: 1px solid var(--green-border) !important;
+  color: #059669 !important;
+}
+.msg-error, [class*="msg-error"] {
+  background: var(--red-bg) !important;
+  border: 1px solid var(--red-border) !important;
+  color: var(--red) !important;
+}
+
+/* ── TABLES ── */
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: var(--text-muted) !important;
+  border-bottom: 2px solid var(--border) !important;
+  padding: 10px 12px !important;
+  background: transparent !important;
+}
+td {
+  padding: 10px 12px !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  color: var(--text-primary) !important;
+  font-size: 13px !important;
+}
+tr:hover td {
+  background: var(--surface-hover) !important;
+}
+
+/* ── LINKS ── */
+a {
+  color: var(--accent) !important;
+  text-decoration: none !important;
+  transition: opacity 0.15s !important;
+}
+a:hover { opacity: 0.75 !important; }
+
+/* ── NAV / HEADER ── */
+.nav, nav, [class*="nav"], [class*="header"], [class*="topbar"] {
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
+}
+.nav a, nav a {
+  color: var(--text-secondary) !important;
+}
+.nav a:hover, nav a:hover, .nav a.active, nav a.active {
+  color: var(--text-primary) !important;
+}
+
+/* ── CHART / VISUALIZATION CONTAINERS ── */
+.chart-wrap, [class*="chart"], [class*="graph"] {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── ADMIN SPECIFIC OVERRIDES ── */
+.wrap { background: var(--bg) !important; }
+.box {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.box::before {
+  background: var(--accent) !important;
+}
+.field label, label {
+  color: var(--text-secondary) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+/* Module checks */
+.module-check {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
+}
+.module-check:hover {
+  border-color: var(--accent) !important;
+}
+
+/* ── DASHBOARD SPECIFIC CHARTS ── */
+/* Override dark backgrounds in Lunni proxied content */
+[style*="background:#0d0f14"],
+[style*="background: #0d0f14"],
+[style*="background-color:#0d0f14"],
+[style*="background-color: #0d0f14"] {
+  background: var(--bg) !important;
+}
+[style*="background:#13161e"],
+[style*="background: #13161e"],
+[style*="background-color:#13161e"],
+[style*="background-color: #13161e"] {
+  background: var(--surface) !important;
+}
+[style*="border:1px solid #252936"],
+[style*="border: 1px solid #252936"] {
+  border-color: var(--border) !important;
+}
+[style*="color:#e8eaf2"],
+[style*="color: #e8eaf2"] {
+  color: var(--text-primary) !important;
+}
+[style*="color:#6b7080"],
+[style*="color: #6b7080"] {
+  color: var(--text-secondary) !important;
+}
+[style*="color:#c8f060"],
+[style*="color: #c8f060"] {
+  color: var(--accent) !important;
+}
+[style*="background:#c8f060"],
+[style*="background: #c8f060"] {
+  background: var(--text-primary) !important;
+  color: var(--surface) !important;
+}
+
+/* ── GRID OVERLAY FIX ── */
+/* Remove the dark grid pattern */
+[style*="linear-gradient(rgba(200,240,96"] {
+  background-image: none !important;
+}
+
+/* ── SELECTION ── */
+::selection {
+  background: var(--accent-bg);
+  color: var(--text-primary);
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px);} to{opacity:1;transform:translateY(0);} }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.5} }
+
+/* ── DASHBOARD SPECIFIC ── */
+/* KPI cards */
+.kpi-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.kpi-value { font-family: 'DM Sans', sans-serif !important; font-weight: 700 !important; }
+.kpi-label { color: var(--muted) !important; }
+
+/* Chart containers */
+.chart-container, [class*="chart-container"], .chart-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+.chart-title, [class*="chart-title"] {
+  color: var(--text) !important;
+}
+
+/* Table rows in dashboards */
+.table-row, [class*="table-row"], .data-row {
+  border-bottom: 1px solid var(--border) !important;
+}
+.table-row:hover, [class*="table-row"]:hover {
+  background: var(--surface-hover) !important;
+}
+
+/* Map specific */
+.topbar {
+  background: var(--surface) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+.topbar-logo span { color: var(--accent) !important; }
+.topbar-right strong { color: var(--accent) !important; }
+
+/* Sidebar / panels */
+.panel, .sidebar, [class*="panel"], [class*="sidebar"] {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Status indicators */
+.status-dot, [class*="status"] {
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+/* Footer / bottom */
+.footer, [class*="footer"] {
+  color: var(--muted) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+/* DM Serif Display → DM Sans override (display font) */
+[style*="DM Serif"], .nav-left h1, h1, [class*="kpi-value"] {
+  font-family: 'DM Sans', sans-serif !important;
+}

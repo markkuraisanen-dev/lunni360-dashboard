@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mittariwizard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #fafaf8;
+    --border: #e8e4dd;
+    --accent: #4f9cf9;
+    --accent-hover: #3b8de6;
+    --accent-text: #ffffff;
+    --blue: #4f9cf9;
+    --pink: #f472b6;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --red: #ef4444;
+    --green: #34d399;
+    --text: #1a1814;
+    --muted: #8a8478;
+    --font-display: 'DM Sans', sans-serif;
+    --font-mono: 'DM Sans', sans-serif;
+    --grid-color: transparent;
+    --chart-grid: rgba(0,0,0,0.06);
+    --shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; background:var(--bg); color:var(--text); font-family:var(--fm); overflow:hidden; }
+
+/* LAYOUT */
+.wizard { display:flex; flex-direction:column; height:100%; }
+.wizard-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.wizard-title { font-family:var(--fd); font-size:1.3rem; }
+.wizard-title span { color:var(--accent); font-style:italic; }
+.close-btn { margin-left:auto; background:transparent; border:1px solid var(--border); color:var(--muted); width:28px; height:28px; border-radius:4px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
+.close-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* STEPS */
+.steps { display:flex; gap:0; border-bottom:1px solid var(--border); padding:0 20px; flex-shrink:0; }
+.step { padding:10px 16px; font-size:0.62rem; letter-spacing:0.08em; color:var(--muted); border-bottom:2px solid transparent; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:6px; }
+.step.active { color:var(--accent); border-bottom-color:var(--accent); }
+.step.done { color:var(--text); }
+.step-num { width:18px; height:18px; border-radius:50%; background:var(--surface2); border:1px solid var(--border); font-size:0.58rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.step.active .step-num { background:var(--accent); color:#0d0f14; border-color:var(--accent); }
+.step.done .step-num { background:rgba(200,240,96,0.15); color:var(--accent); border-color:rgba(200,240,96,0.3); }
+
+/* CONTENT */
+.wizard-body { flex:1; overflow-y:auto; padding:20px; min-height:0; }
+.wizard-body::-webkit-scrollbar { width:4px; }
+.wizard-body::-webkit-scrollbar-thumb { background:var(--border); }
+
+.step-content { display:none; }
+.step-content.active { display:block; }
+
+/* FORM ELEMENTS */
+.section-title { font-size:0.65rem; color:var(--muted); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:10px; }
+.input { background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:9px 12px; font-family:var(--fm); font-size:0.75rem; border-radius:6px; width:100%; transition:border-color 0.2s; }
+.input:focus { outline:none; border-color:var(--accent); }
+.input::placeholder { color:var(--muted); }
+textarea.input { resize:vertical; min-height:80px; }
+
+/* OBJECT CARDS */
+.object-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:16px; }
+.object-card { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:14px 16px; cursor:pointer; transition:all 0.2s; }
+.object-card:hover { border-color:#353848; }
+.object-card.selected { border-color:var(--accent); background:rgba(200,240,96,0.06); }
+.object-name { font-size:0.8rem; color:var(--text); margin-bottom:4px; }
+.object-desc { font-size:0.62rem; color:var(--muted); }
+.object-count { font-size:0.72rem; color:var(--accent); margin-top:6px; }
+
+/* FIELD CHIPS */
+.field-grid { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+.field-chip { padding:5px 12px; border:1px solid var(--border); border-radius:4px; font-size:0.65rem; cursor:pointer; transition:all 0.2s; color:var(--muted); background:var(--surface2); }
+.field-chip.selected { border-color:var(--accent); color:var(--accent); background:rgba(200,240,96,0.08); }
+
+/* DATA PREVIEW */
+.data-preview { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:12px; max-height:120px; overflow-y:auto; font-size:0.62rem; color:var(--muted); }
+.data-preview::-webkit-scrollbar { width:3px; }
+.data-preview table { width:100%; border-collapse:collapse; }
+.data-preview th { color:var(--accent); font-size:0.58rem; padding:4px 8px; text-align:left; border-bottom:1px solid var(--border); }
+.data-preview td { padding:4px 8px; border-bottom:1px solid rgba(37,41,54,0.5); color:var(--text); }
+
+/* PROMPT AREA */
+.prompt-area { position:relative; }
+.prompt-hint { font-size:0.62rem; color:var(--muted); margin-top:6px; line-height:1.5; }
+.prompt-examples { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.prompt-example { padding:4px 10px; border:1px solid var(--border); border-radius:12px; font-size:0.6rem; color:var(--muted); cursor:pointer; transition:all 0.2s; }
+.prompt-example:hover { border-color:var(--accent); color:var(--accent); }
+
+/* IMAGE UPLOAD */
+.image-upload { border:2px dashed var(--border); border-radius:8px; padding:20px; text-align:center; cursor:pointer; transition:all 0.2s; margin-top:12px; }
+.image-upload:hover { border-color:var(--accent); }
+.image-upload input { display:none; }
+.upload-preview { max-width:100%; max-height:150px; border-radius:4px; margin-top:8px; }
+
+/* LIBRARIES */
+.lib-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:12px; }
+.lib-card { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:10px 12px; cursor:pointer; transition:all 0.2s; }
+.lib-card.selected { border-color:var(--accent); background:rgba(200,240,96,0.06); }
+.lib-name { font-size:0.7rem; color:var(--text); }
+.lib-desc { font-size:0.58rem; color:var(--muted); margin-top:2px; }
+
+/* AI GENERATING */
+.generating { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:40px; }
+.gen-spinner { width:40px; height:40px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; }
+.gen-text { font-size:0.75rem; color:var(--muted); }
+.gen-step { font-size:0.65rem; color:var(--accent); }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* PREVIEW OPTIONS */
+.preview-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.preview-option { background:var(--surface2); border:2px solid var(--border); border-radius:8px; overflow:hidden; cursor:pointer; transition:all 0.2s; }
+.preview-option.selected { border-color:var(--accent); }
+.preview-option:hover { border-color:#353848; }
+.preview-label { padding:8px 12px; font-size:0.62rem; color:var(--muted); border-top:1px solid var(--border); display:flex; align-items:center; gap:6px; }
+.preview-option.selected .preview-label { color:var(--accent); }
+.preview-frame { height:180px; width:100%; border:none; background:var(--bg); }
+
+/* PUBLISH FORM */
+.publish-form { display:flex; flex-direction:column; gap:12px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.form-label { font-size:0.62rem; color:var(--muted); margin-bottom:5px; letter-spacing:0.08em; }
+.select { background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:9px 12px; font-family:var(--fm); font-size:0.72rem; border-radius:6px; width:100%; }
+.select:focus { outline:none; border-color:var(--accent); }
+.org-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.org-chip { padding:4px 10px; border:1px solid var(--border); border-radius:10px; font-size:0.62rem; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+.org-chip.selected { border-color:var(--accent); color:var(--accent); background:rgba(200,240,96,0.08); }
+
+/* FOOTER */
+.wizard-footer { padding:12px 20px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; flex-shrink:0; }
+.btn { padding:8px 20px; border-radius:6px; font-family:var(--fm); font-size:0.7rem; cursor:pointer; transition:all 0.2s; border:1px solid var(--border); }
+.btn-ghost { background:transparent; color:var(--muted); }
+.btn-ghost:hover { border-color:var(--muted); color:var(--text); }
+.btn-primary { background:var(--accent); color:#0d0f14; border-color:var(--accent); font-weight:500; }
+.btn-primary:hover { background:#d4f570; }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; }
+</style>
+</head>
+<body>
+<div class="wizard">
+
+  <div class="wizard-header">
+    <div class="wizard-title">Mittari<span>wizard</span></div>
+    <button class="close-btn" onclick="closeWizard()">✕</button>
+  </div>
+
+  <div class="steps">
+    <div class="step active" id="step-tab-1" onclick="gotoStep(1)"><span class="step-num">1</span> Lähde</div>
+    <div class="step" id="step-tab-2" onclick="gotoStep(2)"><span class="step-num">2</span> Kentät</div>
+    <div class="step" id="step-tab-3" onclick="gotoStep(3)"><span class="step-num">3</span> Kuvaus</div>
+    <div class="step" id="step-tab-4" onclick="gotoStep(4)"><span class="step-num">4</span> Rakennetaan</div>
+    <div class="step" id="step-tab-5" onclick="gotoStep(5)"><span class="step-num">5</span> Valitse</div>
+    <div class="step" id="step-tab-6" onclick="gotoStep(6)"><span class="step-num">6</span> Julkaise</div>
+  </div>
+
+  <div class="wizard-body">
+
+    <!-- STEP 1: OBJEKTI -->
+    <div class="step-content active" id="step-1">
+      <div class="section-title">Valitse tietolähde</div>
+      <div class="object-grid" id="objectGrid"></div>
+    </div>
+
+    <!-- STEP 2: KENTÄT -->
+    <div class="step-content" id="step-2">
+      <div class="section-title">Valitse kentät</div>
+      <div class="field-grid" id="fieldGrid"></div>
+      <div id="dataPreviewWrap" style="display:none">
+        <div class="section-title" style="margin-top:16px">Esikatselu datasta</div>
+        <div class="data-preview" id="dataPreview"></div>
+      </div>
+    </div>
+
+    <!-- STEP 3: KUVAUS -->
+    <div class="step-content" id="step-3">
+      <div class="section-title">Kerro mitä haluat näyttää</div>
+      <div class="prompt-area">
+        <textarea class="input" id="promptText" placeholder="Esim: Näytä avoimet työt prioriteetin mukaan pylväskaaviona, korosta punaisella kriittiset..." rows="4"></textarea>
+        <div class="prompt-hint">Kuvaile mitä haluat nähdä. Mitä tarkempi, sitä parempi tulos.</div>
+        <div class="prompt-examples">
+          <span class="prompt-example" onclick="setPrompt(this)">Pylväskaavio statuksen mukaan</span>
+          <span class="prompt-example" onclick="setPrompt(this)">Piirakkakaavio työlajin mukaan</span>
+          <span class="prompt-example" onclick="setPrompt(this)">KPI-kortti yhdellä luvulla</span>
+          <span class="prompt-example" onclick="setPrompt(this)">Trendiviiva 12 kuukautta</span>
+          <span class="prompt-example" onclick="setPrompt(this)">Lista top 10 suurimmista</span>
+          <span class="prompt-example" onclick="setPrompt(this)">Mittarinäyttö prosentteina</span>
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="section-title">TAI lataa esimerkkikuva</div>
+        <div class="image-upload" onclick="document.getElementById('imgInput').click()">
+          <input type="file" id="imgInput" accept="image/*" onchange="handleImageUpload(event)">
+          <div style="font-size:0.65rem;color:var(--muted)">📎 Klikkaa ladataksesi esimerkkikuva</div>
+          <div style="font-size:0.6rem;color:var(--border);margin-top:4px">AI tulkitsee miltä mittarisi pitäisi näyttää</div>
+          <img id="uploadPreview" class="upload-preview" style="display:none">
+        </div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="section-title">Visualisointikirjasto</div>
+        <div class="lib-grid" id="libGrid"></div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input class="input" id="customLibUrl" placeholder="Tai syötä CDN-URL: https://..." style="flex:1">
+          <button class="btn btn-ghost" onclick="addCustomLib()" style="white-space:nowrap">+ Lisää</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: RAKENNETAAN -->
+    <div class="step-content" id="step-4">
+      <div class="generating" id="generatingArea">
+        <div class="gen-spinner"></div>
+        <div class="gen-text">AI rakentaa mittariasi...</div>
+        <div class="gen-step" id="genStep">Analysoidaan dataa</div>
+      </div>
+    </div>
+
+    <!-- STEP 5: VALITSE VISUALISOINTI -->
+    <div class="step-content" id="step-5">
+      <div class="section-title">Valitse visualisointi</div>
+      <div class="preview-grid" id="previewGrid"></div>
+      <button class="btn btn-ghost" onclick="regenerate()" style="margin-top:12px;font-size:0.65rem">↻ Generoi uudelleen eri vaihtoehdoilla</button>
+    </div>
+
+    <!-- STEP 6: JULKAISE -->
+    <div class="step-content" id="step-6">
+      <div class="publish-form">
+        <div>
+          <div class="form-label">Mittarin nimi</div>
+          <input class="input" id="widgetName" placeholder="Esim: Avoimet työt prioriteetin mukaan">
+        </div>
+        <div class="form-row">
+          <div>
+            <div class="form-label">Moduuli</div>
+            <select class="select" id="widgetModule">
+              <option value="crm">CRM</option>
+              <option value="fsm">FSM</option>
+              <option value="eam">EAM</option>
+              <option value="esm">ESM</option>
+              <option value="ecm">ECM</option>
+            </select>
+          </div>
+          <div>
+            <div class="form-label">Koko</div>
+            <select class="select" id="widgetSize">
+              <option value="S">S — Pieni (KPI-kortti)</option>
+              <option value="M" selected>M — Keski (kaavio)</option>
+              <option value="L">L — Suuri (trendi/kartta)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="form-label">Näytetään organisaatioille</div>
+          <div class="org-chips" id="orgChips">
+            <div class="org-chip selected" data-org="all" onclick="toggleOrg(this)">Kaikki</div>
+          </div>
+        </div>
+        <div>
+          <div class="form-label">Kuvaus (valinnainen)</div>
+          <input class="input" id="widgetDesc" placeholder="Lyhyt kuvaus mittarista">
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="wizard-footer">
+    <button class="btn btn-ghost" id="backBtn" onclick="prevStep()" style="display:none">← Takaisin</button>
+    <button class="btn btn-ghost" onclick="closeWizard()">Peruuta</button>
+    <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">Seuraava →</button>
+  </div>
+</div>
+
+<script>
+// ─── TILA ─────────────────────────────────────────────────────────────────────
+let currentStep = 1;
+let selectedObject = null;
+let selectedFields = new Set();
+let promptText = '';
+let uploadedImage = null;
+let selectedLibs = new Set(['chart.js']);
+let generatedVariants = [];
+let selectedVariant = 0;
+let cacheData = [];
+let organizations = [];
+
+const OBJECTS = [
+  { id:'workorders',       name:'Työmääräykset',    desc:'Kaikki huolto- ja korjaustyöt', module:'FSM' },
+  { id:'opportunities',    name:'Myyntimahdollisuudet', desc:'CRM-lidit ja tarjoukset',  module:'CRM' },
+  { id:'serviceschedules', name:'Huoltosopimukset',  desc:'Aktiiviset huoltosopimukset', module:'FSM' },
+  { id:'accounts',         name:'Asiakkaat',         desc:'Asiakastiedot ja organisaatiot', module:'CRM' },
+];
+
+const OBJECT_FIELDS = {
+  workorders:       ['status','priority','classification','target_month','target_year','is_completed','begins','ends','latitude','longitude','employee_id','account_id','location_id'],
+  opportunities:    ['status','stage','amount','probability','close_date','account_id','owner_id','created_at'],
+  serviceschedules: ['is_active','classification','device_id','next_service_date','previous_service_date','serviceprogram_id'],
+  accounts:         ['name','type','status','city','country','created_at'],
+};
+
+const LIBRARIES = [
+  { id:'chart.js',    name:'Chart.js',    desc:'Pylväs, viiva, piirakka', url:'https://cdn.jsdelivr.net/npm/chart.js' },
+  { id:'apexcharts',  name:'ApexCharts',  desc:'Interaktiiviset kaaviot', url:'https://cdn.jsdelivr.net/npm/apexcharts' },
+  { id:'d3',          name:'D3.js',       desc:'Vapaasti muokattavat',    url:'https://d3js.org/d3.v7.min.js' },
+  { id:'gauge',       name:'Gauge.js',    desc:'Mittarinäytöt',           url:'https://cdn.jsdelivr.net/npm/gaugeJS/dist/gauge.min.js' },
+  { id:'frappe',      name:'Frappe Charts',desc:'Minimalistiset kaaviot', url:'https://cdn.jsdelivr.net/npm/frappe-charts/dist/frappe-charts.min.iife.js' },
+  { id:'echarts',     name:'ECharts',     desc:'Laaja kaaviokokoelma',    url:'https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js' },
+];
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  renderObjects();
+  renderLibraries();
+  await loadOrganizations();
+});
+
+function renderObjects() {
+  document.getElementById('objectGrid').innerHTML = OBJECTS.map(o => `
+    <div class="object-card" data-id="${o.id}" onclick="selectObject('${o.id}')">
+      <div class="object-name">${o.name}</div>
+      <div class="object-desc">${o.desc}</div>
+      <div class="object-count" id="count-${o.id}">Ladataan...</div>
+    </div>`).join('');
+  // Hae cachetut määrät
+  OBJECTS.forEach(async o => {
+    try {
+      const d = await fetch('/api/cache/' + o.id).then(r => r.json());
+      const el = document.getElementById('count-' + o.id);
+      if (el) el.textContent = Array.isArray(d) ? d.length + ' tietuetta' : '—';
+    } catch { }
+  });
+}
+
+function renderLibraries() {
+  document.getElementById('libGrid').innerHTML = LIBRARIES.map(l => `
+    <div class="lib-card ${selectedLibs.has(l.id)?'selected':''}" data-id="${l.id}" onclick="toggleLib('${l.id}',this)">
+      <div class="lib-name">${l.name}</div>
+      <div class="lib-desc">${l.desc}</div>
+    </div>`).join('');
+}
+
+async function loadOrganizations() {
+  try {
+    const d = await fetch('/api/organizations').then(r => r.json());
+    organizations = d.organizations || [];
+    const chips = document.getElementById('orgChips');
+    organizations.forEach(org => {
+      const el = document.createElement('div');
+      el.className = 'org-chip';
+      el.dataset.org = org.id;
+      el.textContent = org.name;
+      el.onclick = () => toggleOrg(el);
+      chips.appendChild(el);
+    });
+  } catch { }
+}
+
+// ─── STEP LOGIC ───────────────────────────────────────────────────────────────
+function gotoStep(n) {
+  if (n > currentStep && !validateStep(currentStep)) return;
+  currentStep = n;
+  updateStepUI();
+}
+
+function nextStep() {
+  if (!validateStep(currentStep)) return;
+  if (currentStep === 3) { startGeneration(); return; }
+  if (currentStep < 6) { currentStep++; updateStepUI(); }
+  else saveWidget();
+}
+
+function prevStep() {
+  if (currentStep > 1) { currentStep--; updateStepUI(); }
+}
+
+function updateStepUI() {
+  document.querySelectorAll('.step-content').forEach((el, i) => {
+    el.classList.toggle('active', i + 1 === currentStep);
+  });
+  document.querySelectorAll('.step').forEach((el, i) => {
+    el.classList.toggle('active', i + 1 === currentStep);
+    el.classList.toggle('done', i + 1 < currentStep);
+  });
+  document.getElementById('backBtn').style.display = currentStep > 1 ? 'block' : 'none';
+  const nextBtn = document.getElementById('nextBtn');
+  if (currentStep === 3) nextBtn.textContent = '✨ Rakenna →';
+  else if (currentStep === 4) { nextBtn.style.display = 'none'; return; }
+  else if (currentStep === 6) nextBtn.textContent = '💾 Tallenna ja julkaise';
+  else nextBtn.textContent = 'Seuraava →';
+  nextBtn.style.display = 'block';
+}
+
+function validateStep(step) {
+  if (step === 1 && !selectedObject) { alert('Valitse tietolähde'); return false; }
+  if (step === 2 && selectedFields.size === 0) { alert('Valitse vähintään yksi kenttä'); return false; }
+  if (step === 3) {
+    const txt = document.getElementById('promptText').value.trim();
+    if (!txt && !uploadedImage) { alert('Kirjoita kuvaus tai lataa esimerkkikuva'); return false; }
+    promptText = txt;
+  }
+  return true;
+}
+
+// ─── OBJECT & FIELD SELECTION ─────────────────────────────────────────────────
+async function selectObject(id) {
+  selectedObject = id;
+  selectedFields.clear();
+  document.querySelectorAll('.object-card').forEach(el => {
+    el.classList.toggle('selected', el.dataset.id === id);
+  });
+  // Lataa kenttävalinnat
+  const fields = OBJECT_FIELDS[id] || [];
+  document.getElementById('fieldGrid').innerHTML = fields.map(f =>
+    `<div class="field-chip" data-field="${f}" onclick="toggleField('${f}',this)">${f}</div>`
+  ).join('');
+  // Lataa esikatselu
+  try {
+    cacheData = await fetch('/api/cache/' + id).then(r => r.json());
+    if (!Array.isArray(cacheData)) cacheData = [];
+  } catch { cacheData = []; }
+}
+
+function toggleField(field, el) {
+  if (selectedFields.has(field)) { selectedFields.delete(field); el.classList.remove('selected'); }
+  else { selectedFields.add(field); el.classList.add('selected'); }
+  updateDataPreview();
+}
+
+function updateDataPreview() {
+  if (!selectedFields.size || !cacheData.length) {
+    document.getElementById('dataPreviewWrap').style.display = 'none'; return;
+  }
+  document.getElementById('dataPreviewWrap').style.display = 'block';
+  const fields = [...selectedFields];
+  const rows = cacheData.slice(0, 5);
+  document.getElementById('dataPreview').innerHTML = `<table>
+    <tr>${fields.map(f => `<th>${f}</th>`).join('')}</tr>
+    ${rows.map(r => `<tr>${fields.map(f => `<td>${r[f] ?? '—'}</td>`).join('')}</tr>`).join('')}
+  </table>`;
+}
+
+// ─── LIBRARY SELECTION ────────────────────────────────────────────────────────
+function toggleLib(id, el) {
+  if (selectedLibs.has(id)) { selectedLibs.delete(id); el.classList.remove('selected'); }
+  else { selectedLibs.add(id); el.classList.add('selected'); }
+}
+
+function addCustomLib() {
+  const url = document.getElementById('customLibUrl').value.trim();
+  if (!url) return;
+  selectedLibs.add(url);
+  document.getElementById('customLibUrl').value = '';
+  alert('Kirjasto lisätty: ' + url);
+}
+
+// ─── IMAGE UPLOAD ─────────────────────────────────────────────────────────────
+function handleImageUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    uploadedImage = ev.target.result;
+    const prev = document.getElementById('uploadPreview');
+    prev.src = uploadedImage;
+    prev.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function setPrompt(el) {
+  document.getElementById('promptText').value = el.textContent;
+  promptText = el.textContent;
+}
+
+// ─── AI GENERATION ────────────────────────────────────────────────────────────
+async function startGeneration() {
+  currentStep = 4;
+  updateStepUI();
+
+  const genSteps = ['Analysoidaan dataa...','Rakennetaan visualisointeja...','Optimoidaan koodia...','Viimeistellään...'];
+  let si = 0;
+  const stepEl = document.getElementById('genStep');
+  const interval = setInterval(() => { stepEl.textContent = genSteps[si++ % genSteps.length]; }, 1500);
+
+  try {
+    const libs = [...selectedLibs].map(id => {
+      const l = LIBRARIES.find(x => x.id === id);
+      return l ? l.url : id;
+    });
+
+    const sampleData = cacheData.slice(0, 50);
+    const fields = [...selectedFields];
+
+    // Rakennetaan prompt AI:lle
+    const systemPrompt = `Olet asiantuntija dashboard-mittareiden rakentamisessa. 
+Luo HTML+CSS+JS widget joka visualisoi dataa. 
+TÄRKEÄÄ:
+- Widget on itsenäinen HTML-tiedosto (ei body/html tageja, vain sisältö)
+- Käytä annettuja CDN-kirjastoja
+- Taustaväri: #13161e, tekstiväri: #e8eaf2, korostusväri: #c8f060
+- Fontti: DM Mono (Google Fonts)
+- Widgetin pitää mahtua pieneen tilaan (max 300px korkeus)
+- Lataa data window.__DATA__ muuttujasta
+- Generoi 2 erilaista visualisointivaihtoehtoa, palauta JSON-taulukko: [{"label":"Vaihtoehto 1","html":"..."},{"label":"Vaihtoehto 2","html":"..."}]
+- Palauta VAIN JSON, ei muuta tekstiä`;
+
+    const userMsg = `Data-objekti: ${selectedObject}
+Kentät: ${fields.join(', ')}
+Esimerkkidata (50 riviä): ${JSON.stringify(sampleData)}
+Kirjastot: ${libs.join(', ')}
+Käyttäjän toive: ${promptText}
+${uploadedImage ? 'Käyttäjä on ladannut esimerkkikuvan jota tulisi seurata.' : ''}
+
+Luo 2 erilaista HTML-widgettiä jotka näyttävät tämän datan. Palauta JSON.`;
+
+    const messages = uploadedImage
+      ? [{ role:'user', content:[
+          { type:'image', source:{ type:'base64', media_type:'image/jpeg', data: uploadedImage.split(',')[1] } },
+          { type:'text', text: userMsg }
+        ]}]
+      : [{ role:'user', content: userMsg }];
+
+    const response = await fetch('/api/ai/generate-widget', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ system: systemPrompt, messages, libs, data: sampleData })
+    });
+
+    const result = await response.json();
+    clearInterval(interval);
+
+    if (result.variants && result.variants.length) {
+      generatedVariants = result.variants;
+      currentStep = 5;
+      updateStepUI();
+      renderPreviews();
+    } else {
+      throw new Error('Generointi epäonnistui');
+    }
+  } catch(err) {
+    clearInterval(interval);
+    document.getElementById('generatingArea').innerHTML = `
+      <div style="color:#f06060;font-size:0.75rem;text-align:center">
+        Virhe: ${err.message}<br>
+        <button class="btn btn-ghost" onclick="currentStep=3;updateStepUI()" style="margin-top:12px">← Takaisin</button>
+      </div>`;
+  }
+}
+
+function renderPreviews() {
+  const grid = document.getElementById('previewGrid');
+  grid.innerHTML = generatedVariants.map((v, i) => {
+    const blob = new Blob([wrapWidgetHtml(v.html)], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    return `<div class="preview-option ${i===0?'selected':''}" data-idx="${i}" onclick="selectVariant(${i})">
+      <iframe class="preview-frame" src="${url}" sandbox="allow-scripts"></iframe>
+      <div class="preview-label">
+        <span>${i===0?'✓':''}</span>
+        ${v.label || 'Vaihtoehto ' + (i+1)}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function wrapWidgetHtml(html) {
+  return `<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>*{margin:0;padding:0;box-sizing:border-box;}body{background:#13161e;color:#e8eaf2;font-family:'DM Mono',monospace;padding:12px;overflow:hidden;}</style>
+  </head><body>${html}</body></html>`;
+}
+
+function selectVariant(idx) {
+  selectedVariant = idx;
+  document.querySelectorAll('.preview-option').forEach((el, i) => {
+    el.classList.toggle('selected', i === idx);
+    el.querySelector('.preview-label span').textContent = i === idx ? '✓' : '';
+  });
+}
+
+async function regenerate() {
+  currentStep = 3;
+  updateStepUI();
+}
+
+// ─── ORG TOGGLE ───────────────────────────────────────────────────────────────
+function toggleOrg(el) {
+  const isAll = el.dataset.org === 'all';
+  if (isAll) {
+    document.querySelectorAll('.org-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+  } else {
+    document.querySelector('[data-org="all"]').classList.remove('selected');
+    el.classList.toggle('selected');
+  }
+}
+
+// ─── SAVE ─────────────────────────────────────────────────────────────────────
+async function saveWidget() {
+  const name = document.getElementById('widgetName').value.trim();
+  if (!name) { alert('Anna mittarille nimi'); return; }
+
+  const variant = generatedVariants[selectedVariant];
+  const selectedOrgs = [...document.querySelectorAll('.org-chip.selected')].map(el => el.dataset.org);
+
+  const widget = {
+    name,
+    type: 'custom',
+    module: document.getElementById('widgetModule').value,
+    object: selectedObject,
+    fields: [...selectedFields],
+    prompt: promptText,
+    html: wrapWidgetHtml(variant.html),
+    libraries: [...selectedLibs],
+    visibleTo: selectedOrgs,
+    description: document.getElementById('widgetDesc').value,
+    size: document.getElementById('widgetSize').value,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    const res = await fetch('/api/widgets', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(widget) });
+    const d = await res.json();
+    if (d.success) {
+      window.parent.postMessage({ type:'widget-saved', widgetId: d.id }, '*');
+    }
+  } catch(err) {
+    alert('Tallennusvirhe: ' + err.message);
+  }
+}
+
+function closeWizard() {
+  window.parent.postMessage({ type:'wizard-close' }, '*');
+}
+</script>
+</body>
+</html>

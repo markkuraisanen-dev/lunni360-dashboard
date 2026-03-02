@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lunni360 — CRM Mittaristo</title>
+<link id="themeFonts" rel="stylesheet" href="">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #fafaf8;
+    --border: #e8e4dd;
+    --accent: #4f9cf9;
+    --accent-hover: #3b8de6;
+    --accent-text: #ffffff;
+    --blue: #4f9cf9;
+    --pink: #f472b6;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --red: #ef4444;
+    --green: #34d399;
+    --text: #1a1814;
+    --muted: #8a8478;
+    --accent2: #a78bfa;
+    --accent3: #f472b6;
+    --accent4: #fb923c;
+    --font-display: 'DM Sans', sans-serif;
+    --font-mono: 'DM Sans', sans-serif;
+    --grid-color: transparent;
+    --chart-grid: rgba(0,0,0,0.06);
+    --shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-mono); min-height: 100vh; }
+  body::before { display: none; }
+
+  .container { max-width: 1400px; margin: 0 auto; padding: 32px 24px; position: relative; z-index: 1; }
+
+  /* NAV */
+  nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 16px; }
+  .nav-left h1 { font-family: var(--font-display); font-size: 2.2rem; line-height: 1; }
+  .nav-left h1 span { color: var(--accent); font-style: italic; }
+  .nav-left p { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+  .nav-right { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-link { color: var(--muted); text-decoration: none; font-size: 0.7rem; letter-spacing: 0.08em; padding: 6px 14px; border: 1px solid var(--border); border-radius: 4px; transition: all 0.2s; }
+  .nav-link:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* PERIOD SELECTOR */
+  .period-bar { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; align-items: center; }
+  .period-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 6px 16px; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .period-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .period-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+  .period-spacer { flex: 1; }
+  .status-dot { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--muted); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .dot.live { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+  .period-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .nav-arrow { background: var(--surface); border: 1px solid var(--border); color: var(--muted); width: 34px; height: 34px; border-radius: 4px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+  .nav-arrow:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-arrow:disabled { opacity: 0.3; cursor: default; }
+  .period-label { font-family: var(--font-display); font-size: 1.3rem; color: var(--text); min-width: 220px; text-align: center; }
+  .period-label .hl { color: var(--accent); font-style: italic; }
+  .nav-today { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+  .nav-today:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* KPI CARDS */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px 22px; position: relative; overflow: hidden; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .kpi-card:nth-child(1)::before { background: var(--accent); }
+  .kpi-card:nth-child(2)::before { background: var(--blue); }
+  .kpi-card:nth-child(3)::before { background: var(--orange); }
+  .kpi-card:nth-child(4)::before { background: var(--pink); }
+  .kpi-card:nth-child(5)::before { background: var(--purple); }
+  .kpi-label { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+  .kpi-value { font-family: var(--font-display); font-size: 2.2rem; line-height: 1; }
+  .kpi-value.c1 { color: var(--accent); }
+  .kpi-value.c2 { color: var(--blue); }
+  .kpi-value.c3 { color: var(--orange); }
+  .kpi-value.c4 { color: var(--pink); }
+  .kpi-value.c5 { color: var(--purple); }
+  .kpi-sub { margin-top: 6px; font-size: 0.65rem; color: var(--muted); }
+  .kpi-vs { font-size: 0.65rem; margin-top: 4px; }
+  .kpi-vs.up { color: var(--accent); }
+  .kpi-vs.down { color: var(--pink); }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 16px; }
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
+  .card-title { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .card-title span.icon { color: var(--accent); margin-right: 8px; }
+  .chart-wrap { position: relative; }
+
+  /* WALL OF FAME/SHAME */
+  .wall-tabs { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .wall-tab { flex: 1; padding: 8px; font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .wall-tab.fame { background: rgba(200,240,96,0.1); color: var(--accent); }
+  .wall-tab.fame.active { background: var(--accent); color: var(--bg); }
+  .wall-tab.shame { background: rgba(240,96,168,0.1); color: var(--pink); }
+  .wall-tab.shame.active { background: var(--pink); color: #fff; }
+
+  .seller-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--surface2); }
+  .seller-row:last-child { border-bottom: none; }
+  .seller-rank { font-family: var(--font-display); font-size: 1.4rem; color: var(--muted); width: 28px; flex-shrink: 0; }
+  .seller-rank.gold { color: #ffd700; }
+  .seller-rank.silver { color: #c0c0c0; }
+  .seller-rank.bronze { color: #cd7f32; }
+  .seller-rank.last { color: var(--pink); }
+  .seller-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--muted); flex-shrink: 0; }
+  .seller-info { flex: 1; min-width: 0; }
+  .seller-name { font-size: 0.8rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .seller-deals { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+  .seller-amount { text-align: right; flex-shrink: 0; }
+  .seller-amount .amt { font-family: var(--font-display); font-size: 1.1rem; color: var(--accent); }
+  .seller-amount .amt.shame { color: var(--pink); }
+  .seller-amount .sub { font-size: 0.6rem; color: var(--muted); }
+  .seller-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .seller-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.6s ease; }
+  .seller-bar-fill.shame { background: var(--pink); }
+
+  /* PIPELINE */
+  .pipeline-stage { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--surface2); }
+  .pipeline-stage:last-child { border-bottom: none; }
+  .stage-name { font-size: 0.75rem; color: var(--text); width: 120px; flex-shrink: 0; }
+  .stage-bar-wrap { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .stage-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+  .stage-count { font-size: 0.68rem; color: var(--muted); width: 30px; text-align: right; flex-shrink: 0; }
+  .stage-amount { font-size: 0.75rem; color: var(--text); width: 90px; text-align: right; flex-shrink: 0; }
+
+  /* SELLER DETAIL TABLE */
+  .seller-table { width: 100%; border-collapse: collapse; }
+  .seller-table th { font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+  .seller-table th:first-child { text-align: left; }
+  .seller-table td { padding: 10px; font-size: 0.75rem; border-bottom: 1px solid var(--surface2); text-align: right; }
+  .seller-table td:first-child { text-align: left; color: var(--text); }
+  .seller-table tr:last-child td { border-bottom: none; }
+  .vs-up { color: var(--accent); font-size: 0.65rem; }
+  .vs-down { color: var(--pink); font-size: 0.65rem; }
+  .vs-neu { color: var(--muted); font-size: 0.65rem; }
+
+  /* HÄVIÖANALYYSI */
+  .loss-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--surface2); }
+  .loss-row:last-child { border-bottom: none; }
+  .loss-reason { font-size: 0.75rem; color: var(--text); }
+  .loss-count { font-size: 0.75rem; color: var(--pink); font-family: var(--font-display); }
+
+  /* LOADING */
+  .loading { display: flex; align-items: center; justify-content: center; height: 160px; color: var(--muted); font-size: 0.72rem; gap: 10px; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty { display: flex; align-items: center; justify-content: center; height: 100px; color: var(--muted); font-size: 0.72rem; }
+
+  /* ERROR */
+  .error-msg { background: rgba(240,96,168,0.08); border: 1px solid rgba(240,96,168,0.2); border-radius: 8px; padding: 16px 20px; color: var(--pink); font-size: 0.72rem; line-height: 1.6; margin-bottom: 20px; }
+
+  @media (max-width: 1100px) {
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .grid-2, .grid-1-2, .grid-2-1 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <nav>
+    <div class="nav-left">
+      <h1>Lunni <span>CRM</span></h1>
+      <p>Myynnin mittaristo — Live</p>
+    </div>
+    <div class="nav-right">
+      <span id="cacheInfo" style="font-size:0.62rem;color:var(--muted)"></span>
+      <button id="refreshBtn" onclick="manualRefresh()" class="nav-link" style="cursor:pointer;background:transparent;font-family:var(--font-mono)">⟳ Päivitä data</button>
+      <a href="/fsm" class="nav-link">FSM</a>
+      <a href="/crm" class="nav-link active">CRM</a>
+      <a href="/" class="nav-link">← Dashboard</a>
+      <a href="/logout" class="nav-link">Kirjaudu ulos</a>
+    </div>
+  </nav>
+
+  <div id="errorBox" class="error-msg" style="display:none"></div>
+
+  <!-- AIKAJAKSO -->
+  <div class="period-bar">
+    <button class="period-btn" onclick="setPeriod('day')">Päivä</button>
+    <button class="period-btn" onclick="setPeriod('week')">Viikko</button>
+    <button class="period-btn active" onclick="setPeriod('month')">Kuukausi</button>
+    <button class="period-btn" onclick="setPeriod('quarter')">Kvartaali</button>
+    <button class="period-btn" onclick="setPeriod('year')">Vuosi</button>
+    <button class="period-btn" onclick="setPeriod('all')">Kaikki</button>
+    <div class="period-spacer"></div>
+    <div class="status-dot">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">Ladataan...</span>
+    </div>
+  </div>
+  <div class="period-nav" id="periodNav">
+    <button class="nav-arrow" onclick="shiftOffset(1)">&#8592;</button>
+    <div class="period-label" id="periodLabel">—</div>
+    <button class="nav-arrow" onclick="shiftOffset(-1)" id="nextBtn">&#8594;</button>
+    <button class="nav-today" onclick="resetOffset()">Nykyinen</button>
+  </div>
+
+  <!-- KPI KORTIT -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-label">Kokonaismyynti</div>
+      <div class="kpi-value c1" id="kpiRevenue">—</div>
+      <div class="kpi-sub" id="kpiRevenueSub">voitetut kaupat</div>
+      <div class="kpi-vs" id="kpiRevenueVs"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Win Rate</div>
+      <div class="kpi-value c2" id="kpiWinRate">—</div>
+      <div class="kpi-sub" id="kpiWinRateSub">voitettu / kaikki suljetut</div>
+      <div class="kpi-vs" id="kpiWinRateVs"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Pipeline</div>
+      <div class="kpi-value c3" id="kpiPipeline">—</div>
+      <div class="kpi-sub" id="kpiPipelineSub">avoimet kaupat</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Keskikauppa</div>
+      <div class="kpi-value c4" id="kpiAvgDeal">—</div>
+      <div class="kpi-sub" id="kpiAvgDealSub">voitettu / kauppa</div>
+      <div class="kpi-vs" id="kpiAvgDealVs"></div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Uudet kaupat</div>
+      <div class="kpi-value c5" id="kpiNewDeals">—</div>
+      <div class="kpi-sub" id="kpiNewDealsSub">ajanjaksolla</div>
+      <div class="kpi-vs" id="kpiNewDealsVs"></div>
+    </div>
+  </div>
+
+  <!-- WALL OF FAME / SHAME + PIPELINE -->
+  <div class="grid-1-2">
+    <div class="card">
+      <div class="card-title">
+        <div><span class="icon">◆</span>Wall of Fame / Shame</div>
+      </div>
+      <div class="wall-tabs">
+        <button class="wall-tab fame active" onclick="showWall('fame')">🏆 Fame</button>
+        <button class="wall-tab shame" onclick="showWall('shame')">💀 Shame</button>
+      </div>
+      <div id="wallContent"><div class="loading"><div class="spinner"></div> Ladataan...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">◆</span>Myyntitrendit kuukausittain</div>
+      <div class="chart-wrap" style="height:260px">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- MYYJÄTAULUKKO -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title"><span class="icon">◆</span>Myyjät — Myynti vs. edellinen vuosi</div>
+    <div id="sellerTableWrap"><div class="loading"><div class="spinner"></div> Ladataan...</div></div>
+  </div>
+
+  <!-- PIPELINE + HÄVIÖANALYYSI -->
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="icon">◆</span>Pipeline vaiheittain</div>
+      <div id="pipelineContent"><div class="loading"><div class="spinner"></div> Ladataan...</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">◆</span>Häviöanalyysi</div>
+      <div class="grid-2" style="margin-bottom:0;gap:12px">
+        <div>
+          <div style="font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px">Miksi hävittiin</div>
+          <div id="lossReasons"><div class="loading" style="height:80px"><div class="spinner"></div></div></div>
+        </div>
+        <div class="chart-wrap" style="height:180px">
+          <canvas id="lossChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MYYNTITRENDIT MYYJITTÄIN -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title"><span class="icon">◆</span>Myynti per myyjä — Kuukausittain</div>
+    <div class="chart-wrap" style="height:280px">
+      <canvas id="sellerTrendChart"></canvas>
+    </div>
+  </div>
+
+  <div style="text-align:right;font-size:0.62rem;color:var(--muted);margin-top:8px" id="updatedTime"></div>
+</div>
+
+<script>
+// ─── TILA ───────────────────────────────────────────────────────────────────
+let allOpportunities = [];
+let allUsers = {};
+let currentPeriod = 'month';
+let currentWall = 'fame';
+let trendChartInst = null;
+let lossChartInst = null;
+let sellerTrendChartInst = null;
+
+// ─── STAGE TUNNISTUS ─────────────────────────────────────────────────────────
+function getStageKey(stage) {
+  if (!stage) return 'unknown';
+  const s = stage.toLowerCase();
+  if (s.includes('_won') || s.includes('voitettu') || s.includes('won')) return 'won';
+  if (s.includes('_lost') || s.includes('hävitty') || s.includes('lost')) return 'lost';
+  if (s.includes('_lead') || s.includes('liidi') || s.includes('lead')) return 'lead';
+  if (s.includes('_request') || s.includes('tarjouspyyntö') || s.includes('request')) return 'request';
+  if (s.includes('_offer') || s.includes('tarjottu') || s.includes('tarjous') || s.includes('offer')) return 'offer';
+  if (s.includes('_negotiation') || s.includes('neuvottelu') || s.includes('negotiation')) return 'negotiation';
+  return 'other';
+}
+
+function getStageName(stage) {
+  const key = getStageKey(stage);
+  const names = { won: 'Voitettu', lost: 'Hävitty', lead: 'Liidi', request: 'Tarjouspyyntö', offer: 'Tarjous', negotiation: 'Neuvottelu', other: 'Muu' };
+  return names[key] || 'Tuntematon';
+}
+
+function getStageColor(stage) {
+  const key = getStageKey(stage);
+  const colors = { won: '#c8f060', lost: '#f060a8', lead: '#6b7080', request: '#60c8f0', offer: '#f0a860', negotiation: '#a060f0', other: '#6b7080' };
+  return colors[key] || '#6b7080';
+}
+
+// ─── AIKA-APUFUNKTIOT ────────────────────────────────────────────────────────
+function getPeriodRange(period, offset = 0) {
+  const now = new Date();
+  let start, end;
+  if (period === 'day') {
+    start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - offset);
+    end = new Date(start); end.setDate(end.getDate() + 1);
+  } else if (period === 'week') {
+    const day = now.getDay() || 7;
+    const mon = new Date(now); mon.setDate(now.getDate() - day + 1 - offset * 7);
+    start = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate());
+    end = new Date(start); end.setDate(end.getDate() + 7);
+  } else if (period === 'month') {
+    start = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    end = new Date(now.getFullYear(), now.getMonth() - offset + 1, 1);
+  } else if (period === 'quarter') {
+    const q = Math.floor(now.getMonth() / 3) - offset;
+    const yr = now.getFullYear() + Math.floor(q / 4);
+    const qn = ((q % 4) + 4) % 4;
+    start = new Date(yr, qn * 3, 1);
+    end = new Date(yr, qn * 3 + 3, 1);
+  } else if (period === 'year') {
+    start = new Date(now.getFullYear() - offset, 0, 1);
+    end = new Date(now.getFullYear() - offset + 1, 0, 1);
+  } else {
+    return null;
+  }
+  return { start, end };
+}
+
+function inRange(dateStr, range) {
+  if (!range) return true;
+  const d = new Date(dateStr);
+  return d >= range.start && d < range.end;
+}
+
+function filterByPeriod(opportunities, period, offset = 0) {
+  const range = getPeriodRange(period, offset);
+  if (!range) return opportunities;
+  return opportunities.filter(o => {
+    const date = o.closedate || o.created;
+    return date && inRange(date, range);
+  });
+}
+
+function formatEur(val) {
+  const n = parseFloat(val) || 0;
+  if (n >= 1000000) return `${(n/1000000).toFixed(1)}M€`;
+  if (n >= 1000) return `${(n/1000).toFixed(1)}k€`;
+  return `${Math.round(n)}€`;
+}
+
+function formatEurFull(val) {
+  const n = parseFloat(val) || 0;
+  return new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+}
+
+function vsArrow(curr, prev) {
+  if (!prev || prev === 0) return '';
+  const pct = ((curr - prev) / prev * 100).toFixed(1);
+  if (curr > prev) return `<span class="kpi-vs up">▲ ${pct}% vs. ed. jakso</span>`;
+  if (curr < prev) return `<span class="kpi-vs down">▼ ${Math.abs(pct)}% vs. ed. jakso</span>`;
+  return `<span class="kpi-vs">— sama kuin ed.</span>`;
+}
+
+// ─── CACHE & PÄIVITYS ────────────────────────────────────────────────────────
+let refreshTimer = null;
+
+async function checkCacheStatus() {
+  try {
+    const r = await fetch('/api/cache/status');
+    const s = await r.json();
+    updateRefreshBtn(s);
+    return s;
+  } catch { return null; }
+}
+
+function updateRefreshBtn(status) {
+  const btn = document.getElementById('refreshBtn');
+  const info = document.getElementById('cacheInfo');
+  if (!btn) return;
+  if (status.refreshing) {
+    btn.disabled = true;
+    btn.textContent = '⟳ Päivitetään...';
+    btn.style.opacity = '0.5';
+    setTimeout(checkCacheStatus, 3000);
+    return;
+  }
+  if (status.canRefresh) {
+    btn.disabled = false;
+    btn.textContent = '⟳ Päivitä data';
+    btn.style.opacity = '1';
+  } else {
+    btn.disabled = true;
+    btn.textContent = `⟳ Odota ${status.secondsUntilRefresh}s`;
+    btn.style.opacity = '0.5';
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(() => {
+      if (status.secondsUntilRefresh > 0) {
+        status.secondsUntilRefresh--;
+        btn.textContent = `⟳ Odota ${status.secondsUntilRefresh}s`;
+      } else {
+        clearInterval(refreshTimer);
+        btn.disabled = false;
+        btn.textContent = '⟳ Päivitä data';
+        btn.style.opacity = '1';
+      }
+    }, 1000);
+  }
+  if (info && status.updated) {
+    info.textContent = 'Data: ' + new Date(status.updated).toLocaleString('fi-FI');
+  }
+}
+
+async function manualRefresh() {
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  btn.textContent = '⟳ Käynnistetään...';
+  try {
+    const r = await fetch('/api/cache/refresh', { method: 'POST' });
+    const d = await r.json();
+    if (d.error === 'rate_limited') {
+      btn.textContent = `⟳ Odota ${d.secondsRemaining}s`;
+      updateRefreshBtn({ canRefresh: false, secondsUntilRefresh: d.secondsRemaining, refreshing: false });
+    } else if (d.success) {
+      btn.textContent = '⟳ Päivitetään...';
+      // Pollaa kunnes valmis
+      const poll = setInterval(async () => {
+        const s = await checkCacheStatus();
+        if (s && !s.refreshing) {
+          clearInterval(poll);
+          await loadData();
+        }
+      }, 2000);
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '⟳ Päivitä data';
+  }
+}
+
+// ─── DATA HAKU (CACHESTA) ─────────────────────────────────────────────────────
+async function loadData() {
+  setStatus('loading', 'Ladataan...');
+  document.getElementById('errorBox').style.display = 'none';
+  try {
+    const tokenRes = await fetch('/api/token');
+    const tokenData = await tokenRes.json();
+    applyTheme(tokenData.theme || 'dark');
+
+    // Hae cachesta
+    const [oppoData, usersData, cacheStatus] = await Promise.all([
+      fetch('/api/cache/opportunities').then(r => r.json()),
+      fetch('/api/users', { headers: { 'Authorization': 'Bearer ' + tokenData.token } }).then(r => r.json()),
+      checkCacheStatus()
+    ]);
+
+    allOpportunities = Array.isArray(oppoData) ? oppoData : [];
+
+    allUsers = {};
+    if (Array.isArray(usersData)) {
+      usersData.forEach(u => {
+        allUsers[u.id] = u.first_name && u.last_name ? `${u.first_name} ${u.last_name}` : (u.name || `Käyttäjä ${u.id}`);
+      });
+    }
+
+    updatePeriodNav();
+    renderAll();
+
+    const updatedStr = cacheStatus && cacheStatus.updated
+      ? `Cache: ${new Date(cacheStatus.updated).toLocaleString('fi-FI')} — ${allOpportunities.length} kauppaa`
+      : `${allOpportunities.length} kauppaa ladattu`;
+    setStatus('live', updatedStr);
+    document.getElementById('updatedTime').textContent = updatedStr;
+
+    if (!allOpportunities.length) {
+      document.getElementById('errorBox').style.display = 'block';
+      document.getElementById('errorBox').textContent = 'Ei dataa cachessa. Paina "Päivitä data" ladataksesi ensimmäistä kertaa.';
+    }
+
+  } catch (err) {
+    setStatus('error', 'Virhe');
+    document.getElementById('errorBox').style.display = 'block';
+    document.getElementById('errorBox').textContent = err.message;
+  }
+}
+
+// ─── RENDERÖINTI ─────────────────────────────────────────────────────────────
+function renderAll() {
+  const current = filterByPeriod(allOpportunities, currentPeriod, currentOffset);
+  const previous = filterByPeriod(allOpportunities, currentPeriod, currentOffset + 1);
+
+  renderKPIs(current, previous);
+  renderWall(current);
+  renderTrend();
+  renderSellerTable(current, previous);
+  renderPipeline(current);
+  renderLossAnalysis(current);
+  renderSellerTrend();
+}
+
+function renderKPIs(current, previous) {
+  const won = current.filter(o => getStageKey(o.stage) === 'won');
+  const wonPrev = previous.filter(o => getStageKey(o.stage) === 'won');
+  const closed = current.filter(o => ['won','lost'].includes(getStageKey(o.stage)));
+  const closedPrev = previous.filter(o => ['won','lost'].includes(getStageKey(o.stage)));
+  const pipeline = allOpportunities.filter(o => !['won','lost'].includes(getStageKey(o.stage)));
+  const newDeals = current;
+  const newDealsPrev = previous;
+
+  const revenue = won.reduce((s, o) => s + (parseFloat(o.totalamount) || 0), 0);
+  const revenuePrev = wonPrev.reduce((s, o) => s + (parseFloat(o.totalamount) || 0), 0);
+  const winRate = closed.length > 0 ? Math.round(won.length / closed.length * 100) : 0;
+  const winRatePrev = closedPrev.length > 0 ? Math.round(wonPrev.length / closedPrev.length * 100) : 0;
+  const pipelineVal = pipeline.reduce((s, o) => s + (parseFloat(o.offered_totalamount) || parseFloat(o.totalamount) || 0), 0);
+  const avgDeal = won.length > 0 ? revenue / won.length : 0;
+  const avgDealPrev = wonPrev.length > 0 ? revenuePrev / wonPrev.length : 0;
+
+  document.getElementById('kpiRevenue').textContent = formatEur(revenue);
+  document.getElementById('kpiRevenueSub').textContent = `${won.length} voitettua kauppaa`;
+  document.getElementById('kpiRevenueVs').innerHTML = vsArrow(revenue, revenuePrev);
+
+  document.getElementById('kpiWinRate').textContent = `${winRate}%`;
+  document.getElementById('kpiWinRateSub').textContent = `${won.length} / ${closed.length} suljettu`;
+  document.getElementById('kpiWinRateVs').innerHTML = vsArrow(winRate, winRatePrev);
+
+  document.getElementById('kpiPipeline').textContent = formatEur(pipelineVal);
+  document.getElementById('kpiPipelineSub').textContent = `${pipeline.length} avointa kauppaa`;
+
+  document.getElementById('kpiAvgDeal').textContent = formatEur(avgDeal);
+  document.getElementById('kpiAvgDealSub').textContent = 'per voitettu kauppa';
+  document.getElementById('kpiAvgDealVs').innerHTML = vsArrow(avgDeal, avgDealPrev);
+
+  document.getElementById('kpiNewDeals').textContent = newDeals.length;
+  document.getElementById('kpiNewDealsSub').textContent = 'luotua kauppaa';
+  document.getElementById('kpiNewDealsVs').innerHTML = vsArrow(newDeals.length, newDealsPrev.length);
+}
+
+function getSellerStats(opportunities) {
+  const stats = {};
+  opportunities.forEach(o => {
+    const uid = o.responsibility;
+    if (!uid) return;
+    if (!stats[uid]) stats[uid] = { id: uid, name: allUsers[uid] || `Myyjä ${uid}`, won: 0, lost: 0, revenue: 0, deals: 0 };
+    const key = getStageKey(o.stage);
+    stats[uid].deals++;
+    if (key === 'won') { stats[uid].won++; stats[uid].revenue += parseFloat(o.totalamount) || 0; }
+    if (key === 'lost') stats[uid].lost++;
+  });
+  return Object.values(stats);
+}
+
+function renderWall(current) {
+  const stats = getSellerStats(allOpportunities.filter(o => {
+    if (currentPeriod === 'all') return true;
+    return filterByPeriod([o], currentPeriod, 0).length > 0;
+  }));
+
+  const el = document.getElementById('wallContent');
+  if (stats.length === 0) { el.innerHTML = '<div class="empty">Ei dataa</div>'; return; }
+
+  if (currentWall === 'fame') {
+    const sorted = stats.filter(s => s.won > 0).sort((a, b) => b.revenue - a.revenue);
+    if (sorted.length === 0) { el.innerHTML = '<div class="empty">Ei voitettuja kauppoja</div>'; return; }
+    const maxRev = sorted[0].revenue;
+    const ranks = ['gold', 'silver', 'bronze'];
+    el.innerHTML = sorted.slice(0, 8).map((s, i) => `
+      <div class="seller-row">
+        <div class="seller-rank ${ranks[i] || ''}">${i + 1}</div>
+        <div class="seller-avatar">${s.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
+        <div class="seller-info">
+          <div class="seller-name">${s.name}</div>
+          <div class="seller-deals">${s.won} voitettua · Win rate ${s.won+s.lost>0?Math.round(s.won/(s.won+s.lost)*100):0}%</div>
+          <div class="seller-bar"><div class="seller-bar-fill" style="width:${maxRev>0?Math.round(s.revenue/maxRev*100):0}%"></div></div>
+        </div>
+        <div class="seller-amount">
+          <div class="amt">${formatEur(s.revenue)}</div>
+          <div class="sub">myynti</div>
+        </div>
+      </div>`).join('');
+  } else {
+    const sorted = stats.filter(s => s.lost > 0).sort((a, b) => b.lost - a.lost);
+    if (sorted.length === 0) { el.innerHTML = '<div class="empty">Ei hävittyjä kauppoja 🎉</div>'; return; }
+    const maxLost = sorted[0].lost;
+    el.innerHTML = sorted.slice(0, 8).map((s, i) => `
+      <div class="seller-row">
+        <div class="seller-rank ${i === sorted.length-1 ? 'last' : ''}">${i + 1}</div>
+        <div class="seller-avatar">${s.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}</div>
+        <div class="seller-info">
+          <div class="seller-name">${s.name}</div>
+          <div class="seller-deals">${s.lost} hävittyä · Win rate ${s.won+s.lost>0?Math.round(s.won/(s.won+s.lost)*100):0}%</div>
+          <div class="seller-bar"><div class="seller-bar-fill shame" style="width:${maxLost>0?Math.round(s.lost/maxLost*100):0}%"></div></div>
+        </div>
+        <div class="seller-amount">
+          <div class="amt shame">${s.lost} kpl</div>
+          <div class="sub">hävittyä</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function renderTrend() {
+  const months = [];
+  const wonData = [], lostData = [], pipeData = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+    const label = d.toLocaleString('fi-FI', { month: 'short', year: '2-digit' });
+    months.push(label);
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    const inMonth = allOpportunities.filter(o => {
+      const dt = new Date(o.closedate || o.created);
+      return dt >= start && dt < end;
+    });
+    wonData.push(inMonth.filter(o => getStageKey(o.stage) === 'won').reduce((s,o) => s + (parseFloat(o.totalamount)||0), 0) / 1000);
+    lostData.push(inMonth.filter(o => getStageKey(o.stage) === 'lost').length);
+    pipeData.push(inMonth.filter(o => !['won','lost'].includes(getStageKey(o.stage))).reduce((s,o) => s + (parseFloat(o.offered_totalamount)||parseFloat(o.totalamount)||0), 0) / 1000);
+  }
+
+  if (trendChartInst) trendChartInst.destroy();
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  trendChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        { label: 'Myynti (k€)', data: wonData, backgroundColor: '#c8f060', borderRadius: 3, yAxisID: 'y' },
+        { label: 'Pipeline (k€)', data: pipeData, backgroundColor: 'rgba(240,168,96,0.4)', borderRadius: 3, yAxisID: 'y' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { stacked: false, grid: { color: () => getChartDefaults().grid }, ticks: { color: () => getChartDefaults().tick, font: { size: 9 } } },
+        y: { grid: { color: () => getChartDefaults().grid }, ticks: { color: () => getChartDefaults().tick, font: { size: 9 }, callback: v => `${v}k€` } }
+      },
+      plugins: { legend: { labels: { color: () => getChartDefaults().tick, font: { size: 9 }, boxWidth: 10 } } },
+      animation: { duration: 600 }
+    }
+  });
+}
+
+function renderSellerTable(current, previous) {
+  const el = document.getElementById('sellerTableWrap');
+  const currStats = getSellerStats(current);
+  const prevStats = getSellerStats(previous);
+  const prevMap = {};
+  prevStats.forEach(s => prevMap[s.id] = s);
+
+  // Myös edellisen vuoden sama periodi
+  const yearAgoRange = getPeriodRange(currentPeriod, 0);
+  let yearAgoCurrent = [];
+  if (yearAgoRange) {
+    const ys = new Date(yearAgoRange.start); ys.setFullYear(ys.getFullYear() - 1);
+    const ye = new Date(yearAgoRange.end); ye.setFullYear(ye.getFullYear() - 1);
+    yearAgoCurrent = allOpportunities.filter(o => {
+      const d = new Date(o.closedate || o.created);
+      return d >= ys && d < ye;
+    });
+  }
+  const yearAgoStats = getSellerStats(yearAgoCurrent);
+  const yearAgoMap = {};
+  yearAgoStats.forEach(s => yearAgoMap[s.id] = s);
+
+  if (currStats.length === 0) { el.innerHTML = '<div class="empty">Ei dataa valitulle ajanjaksolle</div>'; return; }
+
+  const sorted = currStats.sort((a, b) => b.revenue - a.revenue);
+  const totals = { revenue: 0, won: 0, lost: 0 };
+  sorted.forEach(s => { totals.revenue += s.revenue; totals.won += s.won; totals.lost += s.lost; });
+
+  function vsCell(curr, prev) {
+    if (!prev || prev === 0) return '<td class="vs-neu">—</td>';
+    const pct = ((curr - prev) / prev * 100).toFixed(0);
+    if (curr > prev) return `<td class="vs-up">▲${pct}%</td>`;
+    if (curr < prev) return `<td class="vs-down">▼${Math.abs(pct)}%</td>`;
+    return '<td class="vs-neu">—</td>';
+  }
+
+  el.innerHTML = `<table class="seller-table">
+    <thead><tr>
+      <th>Myyjä</th>
+      <th>Myynti</th>
+      <th>vs. ed.</th>
+      <th>vs. ed. vuosi</th>
+      <th>Voitettu</th>
+      <th>Hävitty</th>
+      <th>Win rate</th>
+      <th>Keskikauppa</th>
+    </tr></thead>
+    <tbody>
+    ${sorted.map(s => {
+      const prev = prevMap[s.id];
+      const ya = yearAgoMap[s.id];
+      const wr = s.won + s.lost > 0 ? Math.round(s.won / (s.won + s.lost) * 100) : 0;
+      const avg = s.won > 0 ? s.revenue / s.won : 0;
+      return `<tr>
+        <td><strong>${s.name}</strong></td>
+        <td style="color:var(--accent)">${formatEurFull(s.revenue)}</td>
+        ${vsCell(s.revenue, prev?.revenue)}
+        ${vsCell(s.revenue, ya?.revenue)}
+        <td style="color:var(--accent)">${s.won}</td>
+        <td style="color:var(--pink)">${s.lost}</td>
+        <td style="color:${wr >= 50 ? 'var(--accent)' : 'var(--pink)'}">${wr}%</td>
+        <td>${formatEur(avg)}</td>
+      </tr>`;
+    }).join('')}
+    <tr style="border-top:1px solid var(--border);font-weight:bold">
+      <td>Yhteensä</td>
+      <td style="color:var(--accent)">${formatEurFull(totals.revenue)}</td>
+      <td></td><td></td>
+      <td style="color:var(--accent)">${totals.won}</td>
+      <td style="color:var(--pink)">${totals.lost}</td>
+      <td style="color:${totals.won+totals.lost>0&&Math.round(totals.won/(totals.won+totals.lost)*100)>=50?'var(--accent)':'var(--pink)'}">${totals.won+totals.lost>0?Math.round(totals.won/(totals.won+totals.lost)*100):0}%</td>
+      <td>${totals.won>0?formatEur(totals.revenue/totals.won):'—'}</td>
+    </tr>
+    </tbody>
+  </table>`;
+}
+
+function renderPipeline(current) {
+  const el = document.getElementById('pipelineContent');
+  const stageMap = {};
+  current.forEach(o => {
+    const key = getStageKey(o.stage);
+    const name = getStageName(o.stage);
+    if (!stageMap[key]) stageMap[key] = { name, count: 0, amount: 0, color: getStageColor(o.stage) };
+    stageMap[key].count++;
+    stageMap[key].amount += parseFloat(o.offered_totalamount) || parseFloat(o.totalamount) || 0;
+  });
+
+  const stages = Object.values(stageMap).sort((a, b) => b.amount - a.amount);
+  if (stages.length === 0) { el.innerHTML = '<div class="empty">Ei dataa</div>'; return; }
+  const maxAmt = Math.max(...stages.map(s => s.amount));
+
+  el.innerHTML = stages.map(s => `
+    <div class="pipeline-stage">
+      <div class="stage-name">${s.name}</div>
+      <div class="stage-bar-wrap">
+        <div class="stage-bar-fill" style="width:${maxAmt>0?Math.round(s.amount/maxAmt*100):0}%;background:${s.color}"></div>
+      </div>
+      <div class="stage-count">${s.count}</div>
+      <div class="stage-amount">${formatEur(s.amount)}</div>
+    </div>`).join('');
+}
+
+function renderLossAnalysis(current) {
+  const lost = current.filter(o => getStageKey(o.stage) === 'lost');
+  const reasons = {};
+  lost.forEach(o => {
+    const r = o.custom_miksihvittiin || 'Ei syytä';
+    reasons[r] = (reasons[r] || 0) + 1;
+  });
+
+  const el = document.getElementById('lossReasons');
+  const sorted = Object.entries(reasons).sort((a, b) => b[1] - a[1]);
+
+  if (sorted.length === 0) {
+    el.innerHTML = '<div class="empty" style="height:60px">Ei häviöitä 🎉</div>';
+  } else {
+    el.innerHTML = sorted.map(([r, c]) => `
+      <div class="loss-row">
+        <div class="loss-reason">${r}</div>
+        <div class="loss-count">${c}</div>
+      </div>`).join('');
+  }
+
+  if (lossChartInst) lossChartInst.destroy();
+  const ctx = document.getElementById('lossChart').getContext('2d');
+  if (sorted.length > 0) {
+    lossChartInst = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: sorted.map(([r]) => r),
+        datasets: [{ data: sorted.map(([,c]) => c), backgroundColor: ['#f060a8','#f0a860','#a060f0','#60c8f0','#6b7080'], borderColor: '#13161e', borderWidth: 3 }]
+      },
+      options: {
+        cutout: '65%',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } } },
+        animation: { duration: 600 }
+      }
+    });
+  }
+}
+
+function renderSellerTrend() {
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+    months.push(d.toLocaleString('fi-FI', { month: 'short', year: '2-digit' }));
+  }
+
+  const sellerIds = [...new Set(allOpportunities.map(o => o.responsibility).filter(Boolean))];
+  const colors = ['#c8f060','#60c8f0','#f060a8','#f0a860','#a060f0','#60f0a8','#f0f060','#f06060'];
+
+  const datasets = sellerIds.slice(0, 6).map((uid, idx) => {
+    const data = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+      const start = new Date(d.getFullYear(), d.getMonth(), 1);
+      const end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+      const rev = allOpportunities
+        .filter(o => o.responsibility === uid && getStageKey(o.stage) === 'won')
+        .filter(o => { const dt = new Date(o.closedate || o.created); return dt >= start && dt < end; })
+        .reduce((s, o) => s + (parseFloat(o.totalamount) || 0), 0);
+      data.push(rev / 1000);
+    }
+    return { label: allUsers[uid] || `Myyjä ${uid}`, data, borderColor: colors[idx % colors.length], backgroundColor: 'transparent', tension: 0.3, pointRadius: 3, borderWidth: 2 };
+  });
+
+  if (sellerTrendChartInst) sellerTrendChartInst.destroy();
+  const ctx = document.getElementById('sellerTrendChart').getContext('2d');
+  sellerTrendChartInst = new Chart(ctx, {
+    type: 'line',
+    data: { labels: months, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color: () => getChartDefaults().grid }, ticks: { color: () => getChartDefaults().tick, font: { size: 9 } } },
+        y: { grid: { color: () => getChartDefaults().grid }, ticks: { color: () => getChartDefaults().tick, font: { size: 9 }, callback: v => `${v}k€` } }
+      },
+      plugins: { legend: { labels: { color: () => getChartDefaults().tick, font: { size: 9 }, boxWidth: 10, padding: 12 } } },
+      animation: { duration: 600 }
+    }
+  });
+}
+
+// ─── UI TOIMINNOT ────────────────────────────────────────────────────────────
+let currentOffset = 0;
+
+function getPeriodLabel(period, offset) {
+  const now = new Date();
+  if (period === 'all') return '<span class="hl">Kaikki ajat</span>';
+  if (period === 'day') {
+    const d = new Date(now); d.setDate(d.getDate() - offset);
+    if (offset === 0) return 'Tänään <span class="hl">' + d.toLocaleDateString('fi-FI', {day:'numeric',month:'long'}) + '</span>';
+    return d.toLocaleDateString('fi-FI', {weekday:'long', day:'numeric', month:'long'});
+  }
+  if (period === 'week') {
+    const day = now.getDay() || 7;
+    const mon = new Date(now); mon.setDate(now.getDate() - day + 1 - offset * 7);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    const wk = Math.ceil((((mon - new Date(mon.getFullYear(),0,1))/86400000)+1)/7);
+    return 'Viikko <span class="hl">' + wk + ' / ' + mon.getFullYear() + '</span>';
+  }
+  if (period === 'month') {
+    const d = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+    return d.toLocaleDateString('fi-FI', {month:'long', year:'numeric'}).replace(/^\w/, c => c.toUpperCase());
+  }
+  if (period === 'quarter') {
+    const qNow = Math.floor(now.getMonth() / 3);
+    const total = qNow + now.getFullYear() * 4 - offset;
+    const yr = Math.floor(total / 4);
+    const q = total % 4 + 1;
+    return '<span class="hl">Q' + q + '</span> / ' + yr;
+  }
+  if (period === 'year') {
+    const yr = now.getFullYear() - offset;
+    return '<span class="hl">' + yr + '</span>';
+  }
+  return '';
+}
+
+function updatePeriodNav() {
+  const nav = document.getElementById('periodNav');
+  const label = document.getElementById('periodLabel');
+  const nextBtn = document.getElementById('nextBtn');
+  if (currentPeriod === 'all') {
+    nav.style.display = 'none';
+    return;
+  }
+  nav.style.display = 'flex';
+  label.innerHTML = getPeriodLabel(currentPeriod, currentOffset);
+  nextBtn.disabled = currentOffset <= 0;
+}
+
+function shiftOffset(delta) {
+  const newOffset = currentOffset + delta;
+  if (newOffset < 0) return;
+  currentOffset = newOffset;
+  updatePeriodNav();
+  if (allOpportunities.length > 0) renderAll();
+}
+
+function resetOffset() {
+  currentOffset = 0;
+  updatePeriodNav();
+  if (allOpportunities.length > 0) renderAll();
+}
+
+function setPeriod(period) {
+  currentPeriod = period;
+  currentOffset = 0;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  updatePeriodNav();
+  if (allOpportunities.length > 0) renderAll();
+}
+
+function showWall(type) {
+  currentWall = type;
+  document.querySelectorAll('.wall-tab').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (allOpportunities.length > 0) {
+    const current = filterByPeriod(allOpportunities, currentPeriod, 0);
+    renderWall(current);
+  }
+}
+
+function setStatus(state, text) {
+  const dot = document.getElementById('statusDot');
+  const st = document.getElementById('statusText');
+  dot.className = 'dot';
+  if (state === 'live') dot.classList.add('live');
+  st.textContent = text;
+}
+
+// ─── TEEMAT ──────────────────────────────────────────────────────────────────
+const THEMES = {
+  dark: {
+    vars: {
+      '--bg': '#0d0f14', '--surface': '#13161e', '--surface2': '#1a1e28',
+      '--border': '#252936', '--accent': '#c8f060', '--accent-hover': '#d4f57a',
+      '--accent-text': '#0d0f14', '--blue': '#60c8f0', '--pink': '#f060a8',
+      '--orange': '#f0a860', '--purple': '#a060f0', '--text': '#e8eaf2',
+      '--muted': '#6b7080', '--font-display': "'DM Sans', sans-serif",
+      '--font-mono': "'DM Mono', monospace", '--grid-color': 'rgba(200,240,96,0.03)',
+      '--chart-grid': 'rgba(255,255,255,0.05)', '--shadow': '0 4px 24px rgba(0,0,0,0.4)'
+    },
+    fonts: "https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap",
+    chartColors: { grid: 'rgba(255,255,255,0.05)', tick: '#6b7080' }
+  },
+  light: {
+    vars: {
+      '--bg': '#f7f5f0', '--surface': '#ffffff', '--surface2': '#f0ede6',
+      '--border': '#e2ddd5', '--accent': '#c96a2e', '--accent-hover': '#b55a20',
+      '--accent-text': '#ffffff', '--blue': '#2e7ec9', '--pink': '#c92e6a',
+      '--orange': '#c9962e', '--purple': '#6a2ec9', '--text': '#1a1714',
+      '--muted': '#8a8070', '--font-display': "'Playfair Display', serif",
+      '--font-mono': "'IBM Plex Mono', monospace", '--grid-color': 'rgba(201,106,46,0.04)',
+      '--chart-grid': 'rgba(0,0,0,0.06)', '--shadow': '0 4px 24px rgba(0,0,0,0.08)'
+    },
+    fonts: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@300;400;500&display=swap",
+    chartColors: { grid: 'rgba(0,0,0,0.06)', tick: '#8a8070' }
+  },
+  postman: {
+    vars: {
+      '--bg': '#fafafa', '--surface': '#ffffff', '--surface2': '#f0f0f0',
+      '--border': '#e5e5e5', '--accent': '#ff6c37', '--accent-hover': '#e55a25',
+      '--accent-text': '#ffffff', '--blue': '#0066ff', '--pink': '#ff3366',
+      '--orange': '#ff9900', '--purple': '#7c3aed', '--text': '#212121',
+      '--muted': '#757575', '--font-display': "'Sora', sans-serif",
+      '--font-mono': "'JetBrains Mono', monospace", '--grid-color': 'rgba(255,108,55,0.03)',
+      '--chart-grid': 'rgba(0,0,0,0.06)', '--shadow': '0 2px 12px rgba(0,0,0,0.08)'
+    },
+    fonts: "https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap",
+    chartColors: { grid: 'rgba(0,0,0,0.06)', tick: '#757575' }
+  }
+};
+
+let activeTheme = 'dark';
+
+function applyTheme(themeId) {
+  const theme = THEMES[themeId] || THEMES.dark;
+  activeTheme = themeId;
+  const root = document.documentElement;
+  // Apply all CSS variables
+  Object.entries(theme.vars).forEach(([prop, val]) => root.style.setProperty(prop, val));
+  // Apply fonts
+  document.getElementById('themeFonts').href = theme.fonts;
+  // Force body background immediately
+  document.body.style.background = theme.vars['--bg'];
+  document.body.style.color = theme.vars['--text'];
+  // Store for chart redraws
+  window._themeChartColors = theme.chartColors;
+}
+
+function getChartDefaults() {
+  const t = window._themeChartColors || { grid: 'rgba(255,255,255,0.05)', tick: '#6b7080' };
+  return t;
+}
+
+// ─── KÄYNNISTYS ──────────────────────────────────────────────────────────────
+async function initTheme() {
+  try {
+    const r = await fetch('/api/token');
+    const data = await r.json();
+    if (data.theme) applyTheme(data.theme);
+    else applyTheme('dark');
+  } catch(e) { applyTheme('dark'); }
+}
+
+window.addEventListener('load', () => { initTheme(); loadData(); });
+</script>
+</body>
+</html>
