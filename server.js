@@ -590,19 +590,19 @@ const server = http.createServer(async (req, res) => {
     // ── Scorecard Embed (iframe, EI vaadi sessiota) ──
     // Lunni360 kutsuu: /scorecard-embed?token=BEARER_TOKEN&person=Nimi&theme=light
     if (url === '/scorecard-embed') {
-      const urlParams = new URLSearchParams(req.url.split('?')[1] || '');
-      const theme = urlParams.get('theme') || 'light';
+      const embedParams = new URLSearchParams(req.url.split('?')[1] || '');
+      const theme = embedParams.get('theme') || 'light';
       const p = path.join(__dirname, 'scorecard_embed.html');
       return serveHTMLFileForEmbed(res, p, theme);
     }
 
     // ── Embed API: Scorecard data (token URL-parametrissa) ──
     if (url === '/api/embed/scorecard' && req.method === 'GET') {
-      const urlParams = new URLSearchParams(req.url.split('?')[1] || '');
-      const token = urlParams.get('token');
-      const personParam = urlParams.get('person');
-      const startParam = urlParams.get('start');
-      const endParam = urlParams.get('end');
+      const embedScParams = new URLSearchParams(req.url.split('?')[1] || '');
+      const token = embedScParams.get('token');
+      const personParam = embedScParams.get('person');
+      const startParam = embedScParams.get('start');
+      const endParam = embedScParams.get('end');
 
       if (!token) return sendJSON(res, { error: 'Token puuttuu' }, 401);
 
@@ -1369,8 +1369,9 @@ const server = http.createServer(async (req, res) => {
 
   // ── GET /api/layout/:module ──
   if (url.startsWith('/api/layout/') && req.method === 'GET') {
-    const mod = url.replace('/api/layout/', '');
-    const orgId = currentUser.org;
+    const mod = url.replace('/api/layout/', '').split('?')[0];
+    const orgId = getOrgId();
+    if (!orgId) return sendJSON(res, { visible:[], hidden:[] });
     const layouts = loadLayouts();
     const layout = (layouts[orgId] && layouts[orgId][mod]) || { visible:[], hidden:[] };
     // Jos ei layoutia, init vakiomittareista
@@ -1386,8 +1387,9 @@ const server = http.createServer(async (req, res) => {
 
   // ── POST /api/layout/:module ──
   if (url.startsWith('/api/layout/') && req.method === 'POST') {
-    const mod = url.replace('/api/layout/', '');
-    const orgId = currentUser.org;
+    const mod = url.replace('/api/layout/', '').split('?')[0];
+    const orgId = getOrgId();
+    if (!orgId) return sendJSON(res, { error: 'Ei organisaatiota' }, 403);
     let body = '';
     req.on('data', d => body += d);
     req.on('end', () => {
@@ -1419,9 +1421,14 @@ const server = http.createServer(async (req, res) => {
     req.on('end', async () => {
       try {
         const { system, messages } = JSON.parse(body);
+        const apiKey = process.env.ANTHROPIC_API_KEY || '';
+        if (!apiKey) {
+          res.writeHead(500);
+          return res.end(JSON.stringify({ error: 'ANTHROPIC_API_KEY ympäristömuuttuja puuttuu. Aseta se ennen käynnistystä: export ANTHROPIC_API_KEY=sk-ant-...' }));
+        }
         const aiRes = await new Promise((resolve, reject) => {
           const payload = JSON.stringify({
-            model: 'claude-sonnet-4-6',
+            model: 'claude-sonnet-4-5-20250514',
             max_tokens: 4000,
             system,
             messages
@@ -1432,29 +1439,49 @@ const server = http.createServer(async (req, res) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+              'x-api-key': apiKey,
               'anthropic-version': '2023-06-01'
             }
           };
           const req2 = https.request(options, r2 => {
             let data = '';
             r2.on('data', c => data += c);
-            r2.on('end', () => { try { resolve(JSON.parse(data)); } catch(e) { reject(e); } });
+            r2.on('end', () => {
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.error) reject(new Error(parsed.error.message || 'API-virhe'));
+                else resolve(parsed);
+              } catch(e) { reject(new Error('Vastauksen parsinta epäonnistui: ' + data.substring(0, 200))); }
+            });
           });
           req2.on('error', reject);
+          req2.setTimeout(60000, () => { req2.destroy(); reject(new Error('AI-pyyntö aikakatkaistiin (60s)')); });
           req2.write(payload);
           req2.end();
         });
 
         const text = aiRes.content?.[0]?.text || '[]';
-        const clean = text.replace(/```json|```/g, '').trim();
+        const clean = text.replace(/```json\s?|```/g, '').trim();
         let variants;
         try { variants = JSON.parse(clean); }
-        catch { variants = [{ label:'Vaihtoehto 1', html: '<div style="color:#c8f060;padding:20px;text-align:center">Widget generoitu</div>' }]; }
+        catch {
+          // Jos JSON-parsinta epäonnistuu, yritetään löytää JSON taulukko tekstistä
+          const jsonMatch = clean.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            try { variants = JSON.parse(jsonMatch[0]); } catch {}
+          }
+          if (!variants) {
+            variants = [{ label:'Generoitu widget', html: '<div style="padding:20px;text-align:center;color:var(--accent,#4f9cf9)">Widget generoitu — mutta AI:n vastaus ei ollut kelvollinen JSON. Yritä uudelleen.</div>' }];
+          }
+        }
+
+        // Varmista että variants on taulukko
+        if (!Array.isArray(variants)) variants = [variants];
 
         res.writeHead(200, {'Content-Type':'application/json'});
         res.end(JSON.stringify({ variants }));
       } catch(e) {
+        console.error('[AI Generate] Virhe:', e.message);
         res.writeHead(500);
         res.end(JSON.stringify({ error: e.message }));
       }

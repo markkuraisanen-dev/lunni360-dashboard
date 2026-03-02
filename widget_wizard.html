@@ -502,14 +502,16 @@ async function startGeneration() {
     const systemPrompt = `Olet asiantuntija dashboard-mittareiden rakentamisessa. 
 Luo HTML+CSS+JS widget joka visualisoi dataa. 
 TÄRKEÄÄ:
-- Widget on itsenäinen HTML-tiedosto (ei body/html tageja, vain sisältö)
-- Käytä annettuja CDN-kirjastoja
-- Taustaväri: #13161e, tekstiväri: #e8eaf2, korostusväri: #c8f060
-- Fontti: DM Mono (Google Fonts)
+- Widget on itsenäinen HTML-sisältö (ei DOCTYPE/html/body tageja, vain sisältö)
+- Käytä annettuja CDN-kirjastoja script-tageilla
+- Taustaväri: #f7f6f3 (vaalea), tekstiväri: #1a1814, korostusväri: #4f9cf9
+- Fontti: DM Sans (Google Fonts) — jo ladattu
 - Widgetin pitää mahtua pieneen tilaan (max 300px korkeus)
-- Lataa data window.__DATA__ muuttujasta
-- Generoi 2 erilaista visualisointivaihtoehtoa, palauta JSON-taulukko: [{"label":"Vaihtoehto 1","html":"..."},{"label":"Vaihtoehto 2","html":"..."}]
-- Palauta VAIN JSON, ei muuta tekstiä`;
+- Data on saatavilla window.__DATA__ muuttujasta (JSON-taulukko)
+- TÄRKEÄ: Aloita widgetin koodi aina lukemalla data: const data = window.__DATA__ || [];
+- Generoi 2 erilaista visualisointivaihtoehtoa
+- Palauta JSON-taulukko: [{"label":"Vaihtoehto 1","html":"..."},{"label":"Vaihtoehto 2","html":"..."}]
+- Palauta VAIN JSON, ei muuta tekstiä, ei markdown-koodiblokkeja`;
 
     const userMsg = `Data-objekti: ${selectedObject}
 Kentät: ${fields.join(', ')}
@@ -557,7 +559,7 @@ Luo 2 erilaista HTML-widgettiä jotka näyttävät tämän datan. Palauta JSON.`
 function renderPreviews() {
   const grid = document.getElementById('previewGrid');
   grid.innerHTML = generatedVariants.map((v, i) => {
-    const blob = new Blob([wrapWidgetHtml(v.html)], {type:'text/html'});
+    const blob = new Blob([wrapWidgetHtml(v.html, cacheData)], {type:'text/html'});
     const url = URL.createObjectURL(blob);
     return `<div class="preview-option ${i===0?'selected':''}" data-idx="${i}" onclick="selectVariant(${i})">
       <iframe class="preview-frame" src="${url}" sandbox="allow-scripts"></iframe>
@@ -569,11 +571,14 @@ function renderPreviews() {
   }).join('');
 }
 
-function wrapWidgetHtml(html) {
+function wrapWidgetHtml(html, data) {
+  const dataScript = data ? `<script>window.__DATA__ = ${JSON.stringify(data)};<\/script>` : '';
   return `<!DOCTYPE html><html><head>
     <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>*{margin:0;padding:0;box-sizing:border-box;}body{background:#13161e;color:#e8eaf2;font-family:'DM Mono',monospace;padding:12px;overflow:hidden;}</style>
+    <style>*{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg,#f7f6f3);color:var(--text,#1a1814);font-family:'DM Sans',sans-serif;padding:12px;overflow:hidden;}</style>
+    ${dataScript}
   </head><body>${html}</body></html>`;
 }
 
@@ -617,7 +622,7 @@ async function saveWidget() {
     object: selectedObject,
     fields: [...selectedFields],
     prompt: promptText,
-    html: wrapWidgetHtml(variant.html),
+    html: wrapWidgetHtml(variant.html, cacheData),
     libraries: [...selectedLibs],
     visibleTo: selectedOrgs,
     description: document.getElementById('widgetDesc').value,

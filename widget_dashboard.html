@@ -301,9 +301,15 @@ function renderWidgetContent(w) {
     return `<div class="widget-loading"><div class="spinner"></div><span>Ladataan...</span></div>`;
   }
   if (w.html) {
-    const blob = new Blob([w.html], {type:'text/html'});
-    const url = URL.createObjectURL(blob);
-    return `<iframe src="${url}" sandbox="allow-scripts"></iframe>`;
+    // Widget HTML saattaa olla jo täysi HTML-dokumentti tai pelkkä sisältö
+    const fullHtml = w.html.includes('<!DOCTYPE') || w.html.includes('<html') ? w.html : 
+      `<!DOCTYPE html><html><head><meta charset="UTF-8">
+       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+       <style>*{margin:0;padding:0;box-sizing:border-box;}body{background:var(--bg,#f7f6f3);color:var(--text,#1a1814);font-family:'DM Sans',sans-serif;padding:12px;overflow:hidden;}</style>
+       </head><body>${w.html}</body></html>`;
+    const blob = new Blob([fullHtml], {type:'text/html'});
+    const blobUrl = URL.createObjectURL(blob);
+    return `<iframe src="${blobUrl}" sandbox="allow-scripts" style="width:100%;height:100%;border:none;background:transparent;"></iframe>`;
   }
   return `<div class="widget-loading" style="color:var(--muted);font-size:0.65rem;text-align:center;padding:8px">${w.description||'Ei sisältöä'}</div>`;
 }
