@@ -9,7 +9,7 @@
   :root {
     --bg: #f7f6f3; --surface: #ffffff; --border: #e8e4dd; --border-light: #f0ece6;
     --text-primary: #1a1814; --text-secondary: #8a8478; --text-muted: #bbb5ac;
-    --empty: #e8e4dd; --red: #ff4d4d; --orange: #ff8c42; --green: #4caf7d; --star: #f5c842;
+    --empty: #c5c0b8; --red: #ff4d4d; --orange: #ff8c42; --green: #4caf7d; --star: #f5c842;
     --blue: #4f9cf9; --purple: #a78bfa; --teal: #34d399; --pink: #f472b6;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,27 +64,27 @@
 
   /* ── SCORECARD TABLE ── */
   .scorecard { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; }
-  .scorecard-header { display:grid; grid-template-columns:160px 1fr 100px; padding:12px 20px; border-bottom:1px solid var(--border-light); }
+  .scorecard-header { display:grid; grid-template-columns:160px 1fr 100px 180px; padding:12px 20px; border-bottom:1px solid var(--border-light); }
   .col-label { font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-muted); }
   .col-label.center { text-align:center; }
   .col-label.right { text-align:right; }
-  .scorecard-row { display:grid; grid-template-columns:160px 1fr 100px; padding:18px 20px; border-bottom:1px solid var(--border-light); align-items:center; transition:background 0.15s; animation:rowIn 0.4s ease both; }
+  .scorecard-row { display:grid; grid-template-columns:160px 1fr 100px 180px; padding:18px 20px; border-bottom:1px solid var(--border-light); align-items:center; transition:background 0.15s; animation:rowIn 0.4s ease both; }
   .scorecard-row:last-child { border-bottom:none; }
   .scorecard-row:hover { background:#faf9f7; }
   .type-info { display:flex; align-items:center; gap:10px; }
   .type-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
   .type-name { font-size:13px; font-weight:500; color:var(--text-primary); }
   .type-sub { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-muted); margin-top:2px; }
-  .orbs { display:flex; flex-wrap:wrap; gap:5px; justify-content:center; padding:0 10px; }
+  .orbs { display:flex; flex-wrap:nowrap; gap:4px; justify-content:flex-start; padding:0 10px; overflow-x:auto; align-items:center; }
   .orb { width:22px; height:22px; position:relative; display:flex; align-items:center; justify-content:center; cursor:default; }
   .orb-empty svg circle { fill:none; stroke:var(--empty); stroke-width:1.5; }
   .orb-filled svg circle { fill:none; stroke-width:1.5; }
   .orb-red svg circle { stroke:var(--red); }
   .orb-orange svg circle { stroke:var(--orange); }
   .orb-green svg circle { stroke:var(--green); }
-  .orb-red .orb-inner { fill:rgba(255,77,77,0.08); }
-  .orb-orange .orb-inner { fill:rgba(255,140,66,0.08); }
-  .orb-green .orb-inner { fill:rgba(76,175,125,0.08); }
+  .orb-red .orb-inner { fill:none; }
+  .orb-orange .orb-inner { fill:none; }
+  .orb-green .orb-inner { fill:none; }
   .orb-star svg { overflow:visible; }
   .star-path { fill:none; stroke:var(--star); stroke-width:1.4; stroke-linejoin:round; stroke-linecap:round; filter:drop-shadow(0 0 3px rgba(245,200,66,0.5)); }
   .orb[data-tip]:hover::after { content:attr(data-tip); position:absolute; bottom:28px; left:50%; transform:translateX(-50%); background:var(--text-primary); color:white; font-size:10px; font-weight:500; padding:4px 8px; border-radius:6px; white-space:nowrap; pointer-events:none; z-index:10; }
@@ -96,8 +96,45 @@
   .score-num.zero { color:var(--text-muted); opacity:0.5; }
   .day-card-big.zero { color:var(--text-muted) !important; opacity:0.5; }
   .legend { display:flex; gap:16px; padding:14px 20px; background:var(--bg); border-top:1px solid var(--border-light); flex-wrap:wrap; }
-  .legend-item { display:flex; align-items:center; gap:6px; font-size:10px; font-weight:500; color:var(--text-muted); letter-spacing:0.04em; text-transform:uppercase; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:10px; font-weight:500; color:var(--text-muted); letter-spacing:0.04em; text-transform:uppercase; opacity:0.5; }
   .legend-dot { width:8px; height:8px; border-radius:50%; border:1.5px solid currentColor; }
+
+  /* ── NEXT CELL ── */
+  .next-cell { font-size:11px; line-height:1.4; padding-left:12px; }
+  .next-cell .next-label { font-size:9px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+  .next-cell .next-account { font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
+  .next-cell .next-time { color:var(--text-muted); font-size:10px; }
+  .next-cell .next-empty { color:var(--text-muted); font-style:italic; font-size:10px; }
+
+  /* ── DETAILS TOGGLE ── */
+  .sc-details-toggle { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; margin:2px 0 2px 0; font-size:10px; font-weight:500; color:var(--blue); cursor:pointer; border:none; background:none; font-family:'DM Sans',sans-serif; }
+  .sc-details-toggle:hover { opacity:0.7; }
+  .sc-details-toggle .toggle-arrow { font-size:8px; transition:transform 0.2s; }
+  .sc-details-toggle.open .toggle-arrow { transform:rotate(90deg); }
+  .sc-details-list { display:none; padding:4px 0 4px 160px; }
+  .sc-details-list.open { display:block; }
+  .sc-detail-row { display:flex; align-items:center; gap:12px; padding:4px 8px; font-size:11px; border-radius:6px; }
+  .sc-detail-row:hover { background:rgba(79,156,249,0.06); }
+  .sc-detail-row .detail-account { font-weight:600; color:var(--text-primary); min-width:100px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px; }
+  .sc-detail-row .detail-time { color:var(--text-muted); font-size:10px; min-width:40px; }
+  .sc-detail-row .detail-status { font-size:10px; color:var(--green); }
+
+  /* ── WEEK SEPARATOR ── */
+  .orb-week-sep { display:inline-flex; align-items:center; justify-content:center; width:26px; height:22px; font-size:8px; font-weight:700; color:var(--text-muted); letter-spacing:0.02em; opacity:0.7; flex-shrink:0; }
+
+  /* ── ORB MODE TOGGLE ── */
+  .orb-mode-toggle { display:inline-flex; gap:2px; background:var(--bg); border-radius:8px; padding:2px; margin-left:8px; vertical-align:middle; }
+  .orb-mode-btn { padding:3px 8px; border-radius:6px; border:none; background:transparent; color:var(--text-muted); font-family:'DM Sans',sans-serif; font-size:9px; font-weight:600; cursor:pointer; letter-spacing:0.04em; text-transform:uppercase; }
+  .orb-mode-btn.active { background:var(--surface); color:var(--text-primary); box-shadow:0 1px 3px rgba(0,0,0,0.08); opacity:1; }
+  .orbs.stacked { gap:14px; align-items:flex-end; flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; }
+  .orb-day-col { display:flex; flex-direction:column-reverse; align-items:center; gap:4px; min-width:22px; }
+  .orb-day-col .orb { width:22px; height:22px; }
+  .orb-day-col .orb svg { width:22px; height:22px; }
+  .orb-day-col .orb svg circle { stroke-width:1.8; }
+  .orb-day-label { font-size:7px; color:var(--text-muted); margin-top:2px; white-space:nowrap; }
+  .orbs.stacked .orb-week-sep { align-self:center; height:auto; min-width:20px; font-size:7px; }
+
+  @media(max-width:600px) { .next-cell { display:none; } .scorecard-header,.scorecard-row { grid-template-columns:160px 1fr 100px; } }
   .legend-dot.red { color:var(--red); } .legend-dot.orange { color:var(--orange); } .legend-dot.green { color:var(--green); }
 
   /* ── GAUGES ── */
@@ -302,8 +339,9 @@
         <div class="scorecard">
           <div class="scorecard-header">
             <span class="col-label">Tyyppi</span>
-            <span class="col-label center">Eteneminen — <span id="wdLabel">20</span> päivää</span>
+            <span class="col-label center">Eteneminen — <span id="wdLabel">20</span> päivää <span class="orb-mode-toggle"><button class="orb-mode-btn active" data-mode="row" onclick="setOrbMode('row')">Rivi</button><button class="orb-mode-btn" data-mode="stacked" onclick="setOrbMode('stacked')">Pino</button></span></span>
             <span class="col-label right">Tulos</span>
+            <span class="col-label">Seuraava</span>
           </div>
           <div id="tableBody"><div class="sc-loading"><div class="sc-spinner"></div>Ladataan...</div></div>
           <div class="legend">
@@ -378,7 +416,9 @@
   var DAYS=['Sunnuntai','Maanantai','Tiistai','Keskiviikko','Torstai','Perjantai','Lauantai'];
 
   // STATE
-  var tfMode='day',tfDate=new Date(),currentView='scorecard',lastData=null,selectedPerson='';
+  var tfMode='day',tfDate=new Date(),currentView='scorecard',lastData=null,selectedPerson='',orbMode='row';
+
+  function setOrbMode(m){orbMode=m;document.querySelectorAll('.orb-mode-btn').forEach(function(b){b.classList.toggle('active',b.dataset.mode===m);});if(lastData)renderTable(lastData);}
 
   // INIT
   fetchUserInfo(); updateTFLabel(); fetchData(); setInterval(tick,60000);
@@ -520,8 +560,13 @@
   function starOrb(tip){return '<div class="orb orb-star" data-tip="'+(tip||'')+'">'+starSVG()+'</div>';}
 
   // TABLE (week/month)
+  function getWeekNum(d){var oneJan=new Date(d.getFullYear(),0,1);return Math.ceil(((d-oneJan)/86400000+oneJan.getDay()+1)/7);}
+  function toggleDetails(id,btn){var el=document.getElementById(id);if(!el)return;var isOpen=el.classList.toggle('open');btn.classList.toggle('open',isOpen);var count=el.children.length;btn.innerHTML='<span class="toggle-arrow">\u25B6</span> '+count+' kirjausta \u2014 '+(isOpen?'piilota':'n\u00e4yt\u00e4');}
+
   function renderTable(data){
     var c=data.counts||{},r=data._range||getDateRange(),wd=r.days;
+    var nextOpen=data.nextOpen||{};
+    var activitiesList=data.activities||{};
     document.getElementById('wdLabel').textContent=wd;
     var now=new Date(),isNow=now.getFullYear()===tfDate.getFullYear()&&now.getMonth()===tfDate.getMonth();
     var pFill=tfMode==='month'?(isNow?Math.round(now.getDate()/new Date(tfDate.getFullYear(),tfDate.getMonth()+1,0).getDate()*100):100):100;
@@ -530,7 +575,32 @@
     CONFIG.trackables.forEach(function(t,idx){
       var actual=c[t.key]||0,target=t.model==='cumulative'?t.monthly:(tfMode==='week'?t.daily*5:t.daily*CONFIG.workdays);
       var pct=target>0?Math.round(actual/target*100):0,pctCls=pct>=70?'pct-green':pct>=31?'pct-orange':'pct-red';
-      html+='<div class="scorecard-row" style="animation-delay:'+((idx+1)*0.05)+'s"><div class="type-info"><div class="type-dot" style="background:'+t.dot+'"></div><div><div class="type-name">'+t.label+'</div><div class="type-sub">'+t.sub+'</div></div></div><div class="orbs" id="orbs_'+t.key+'"></div><div class="score-cell"><div class="score-num'+(actual===0?' zero':'')+'">'+actual+'</div><div class="score-target">/ '+target+'</div><div class="score-pct '+pctCls+'">'+pct+'%</div></div></div>';
+      var next=nextOpen[t.key];
+      var nextHtml='<div class="next-cell">';
+      if(next&&next.begins){
+        var nd=new Date(next.begins);
+        var nt=nd.getDate()+'.'+(nd.getMonth()+1)+'. '+String(nd.getHours()).padStart(2,'0')+':'+String(nd.getMinutes()).padStart(2,'0');
+        nextHtml+='<div class="next-label">Seuraava</div>';
+        nextHtml+='<div class="next-account">'+(next.account_name||'Asiakas')+'</div>';
+        nextHtml+='<div class="next-time">'+nt+'</div>';
+      } else {
+        nextHtml+='<div class="next-empty">Ei avoimia</div>';
+      }
+      nextHtml+='</div>';
+      var acts=(activitiesList[t.key]||[]).sort(function(a,b){return(b.begins||'').localeCompare(a.begins||'');});
+      var detailId='sc_det_'+t.key;
+      var detailHtml='';
+      if(acts.length>0){
+        detailHtml+='<button class="sc-details-toggle" onclick="toggleDetails(\''+detailId+'\',this)"><span class="toggle-arrow">\u25B6</span> '+acts.length+' kirjausta \u2014 n\u00e4yt\u00e4</button>';
+        detailHtml+='<div class="sc-details-list" id="'+detailId+'">';
+        acts.forEach(function(a){
+          var ad=a.begins?new Date(a.begins):null;
+          var at=ad?(ad.getDate()+'.'+(ad.getMonth()+1)+'. '+String(ad.getHours()).padStart(2,'0')+':'+String(ad.getMinutes()).padStart(2,'0')):'';
+          detailHtml+='<div class="sc-detail-row"><span class="detail-status">\u2713</span><span class="detail-account">'+(a.account_name||'Asiakas #'+(a.account_id||'\u2014'))+'</span><span class="detail-time">'+at+'</span></div>';
+        });
+        detailHtml+='</div>';
+      }
+      html+='<div class="scorecard-row" style="animation-delay:'+((idx+1)*0.05)+'s"><div class="type-info"><div class="type-dot" style="background:'+t.dot+'"></div><div><div class="type-name">'+t.label+'</div><div class="type-sub">'+t.sub+'</div></div></div><div class="orbs'+(orbMode==='stacked'?' stacked':'')+'" id="orbs_'+t.key+'"></div><div class="score-cell"><div class="score-num'+(actual===0?' zero':'')+'"\>'+actual+'</div><div class="score-target">/ '+target+'</div><div class="score-pct '+pctCls+'">'+pct+'%</div></div>'+nextHtml+'</div>'+detailHtml;
     });
     document.getElementById('tableBody').innerHTML=html;
     var pastDays=tfMode==='week'?wd:(isNow?now.getDate():(now>r.end?wd:0));
@@ -539,8 +609,20 @@
       var ballCount=t.model==='cumulative'?t.monthly:wd;
       if(t.model==='cumulative'){var h='';for(var i=0;i<ballCount;i++)h+=i<actual?starOrb(t.label+' '+(i+1)+' \u2713'):emptyOrb(t.label+' '+(i+1));el.innerHTML=h;return;}
       if(t.model==='binary'){var h='',stars=actual;for(var i=0;i<ballCount;i++){if(i>=pastDays)h+=emptyOrb('Pv '+(i+1));else if(stars>0){h+=starOrb('Pv '+(i+1)+': \u2713');stars--;}else h+=emptyOrb('Pv '+(i+1)+': \u2013');}el.innerHTML=h;return;}
-      var perDay=distribute(actual,pastDays,t.daily),h='';
-      for(var i=0;i<ballCount;i++){if(i>=pastDays){h+=emptyOrb('Pv '+(i+1));continue;}var dv=perDay[i]||0,dp=t.daily>0?Math.round(dv/t.daily*100):0;h+=dp>=100?starOrb('Pv '+(i+1)+': '+dv):colorOrb(dp,'Pv '+(i+1)+': '+dv);}el.innerHTML=h;
+      if(orbMode==='stacked'){
+        var perDay=distribute(actual,pastDays,t.daily),h='',wkMap={};
+        for(var ii=0;ii<ballCount;ii++){var dayDate=new Date(tfDate.getFullYear(),tfDate.getMonth(),ii+1);var wk=getWeekNum(dayDate);if(!wkMap[wk])wkMap[wk]=[];var dv=ii<pastDays?(perDay[ii]||0):0;var dp=t.daily>0?Math.round(dv/t.daily*100):0;wkMap[wk].push({idx:ii,dv:dv,dp:dp,future:ii>=pastDays});}
+        Object.keys(wkMap).sort(function(a,b){return a-b;}).forEach(function(wk){var days=wkMap[wk];h+='<div class="orb-day-col">';days.forEach(function(dd){var tip="Pv "+(dd.idx+1)+": "+dd.dv+"/"+t.daily;if(dd.future){h+=emptyOrb(tip);}else{h+=colorOrb(dd.dp,tip);}});for(var pp=days.length;pp<5;pp++){h+='<div class="orb" style="width:16px;height:16px;visibility:hidden"></div>';}h+='<div class="orb-day-label">v'+wk+'</div></div>';});
+        el.innerHTML=h;
+      } else {
+        var perDay=distribute(actual,pastDays,t.daily),h='',lastWk=-1;
+        for(var i=0;i<ballCount;i++){
+          if(tfMode==='month'){var dayDate=new Date(tfDate.getFullYear(),tfDate.getMonth(),i+1);var wk=getWeekNum(dayDate);if(wk!==lastWk){// no wrapper spanh+='<span class="orb-week-sep">v'+wk+'</span>';lastWk=wk;}}
+          if(i>=pastDays){h+=emptyOrb('Pv '+(i+1));continue;}var dv=perDay[i]||0,dp=t.daily>0?Math.round(dv/t.daily*100):0;h+=dp>=100?starOrb('Pv '+(i+1)+': '+dv):colorOrb(dp,'Pv '+(i+1)+': '+dv);
+        }
+        // no wrapper span
+        el.innerHTML=h;
+      }
     });
   }
   function distribute(total,days,daily){if(days<=0)return[];var r=[],rem=total,seed=tfDate.getFullYear()*100+tfDate.getMonth();function rng(){seed=(seed*9301+49297)%233280;return seed/233280;}for(var i=0;i<days;i++){var avg=days-i>0?rem/(days-i):rem;var j=avg*0.4*(rng()-0.5);var d=Math.max(0,Math.round(avg+j));d=Math.min(d,rem);r.push(d);rem-=d;}if(rem>0&&r.length>0)r[r.length-1]+=rem;return r;}

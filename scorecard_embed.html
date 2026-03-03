@@ -20,7 +20,7 @@
       --radius: 16px;
       --font: 'DM Sans', sans-serif;
       --star-color: #f5c542;
-      --orb-empty: #e0ddd7;
+      --orb-empty: #c5c0b8;
       --orb-red: #e74c3c;
       --orb-orange: #f39c12;
       --orb-green: #27ae60;
@@ -48,7 +48,7 @@
       border-radius: var(--radius);
       border: 1px solid var(--border);
       margin-bottom: 16px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
     }
     .control-bar .view-tabs {
       display: flex;
@@ -178,6 +178,7 @@
     .sc-header .col-type { width: 110px; flex-shrink: 0; }
     .sc-header .col-orbs { flex: 1; text-align: center; }
     .sc-header .col-result { width: 70px; flex-shrink: 0; text-align: right; }
+    .sc-header .col-next { width: 180px; flex-shrink: 0; text-align: left; padding-left: 12px; }
     .sc-row {
       display: flex;
       align-items: center;
@@ -185,6 +186,107 @@
       border-bottom: 1px solid var(--border);
     }
     .sc-row:last-child { border-bottom: none; }
+    .sc-row-wrap { border-bottom: 1px solid var(--border); }
+    .sc-row-wrap:last-child { border-bottom: none; }
+    .sc-row-wrap .sc-row { border-bottom: none; }
+
+    /* Seuraava-sarake */
+    .next-cell {
+      width: 180px;
+      flex-shrink: 0;
+      padding-left: 12px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .next-cell .next-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 2px;
+    }
+    .next-cell .next-account {
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 170px;
+    }
+    .next-cell .next-time {
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+    .next-cell .next-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      font-size: 10px;
+    }
+
+    /* Avattava detaljirivistö */
+    .sc-details-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      margin: 2px 0 2px 110px;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--accent);
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: var(--font);
+      transition: opacity 0.15s;
+    }
+    .sc-details-toggle:hover { opacity: 0.7; }
+    .sc-details-toggle .toggle-arrow {
+      font-size: 8px;
+      transition: transform 0.2s;
+    }
+    .sc-details-toggle.open .toggle-arrow {
+      transform: rotate(90deg);
+    }
+    .sc-details-list {
+      display: none;
+      margin: 0 0 4px 110px;
+      padding: 4px 0;
+    }
+    .sc-details-list.open { display: block; }
+    .sc-detail-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 8px;
+      font-size: 11px;
+      border-radius: 6px;
+      transition: background 0.1s;
+    }
+    .sc-detail-row:hover { background: var(--accent-glow); }
+    .sc-detail-row .detail-account {
+      font-weight: 600;
+      color: var(--text);
+      min-width: 100px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+    .sc-detail-row .detail-time {
+      color: var(--text-muted);
+      font-size: 10px;
+      min-width: 40px;
+    }
+    .sc-detail-row .detail-status {
+      font-size: 10px;
+      color: var(--orb-green);
+    }
+
+    @media (max-width: 600px) {
+      .next-cell { display: none; }
+      .sc-header .col-next { display: none; }
+    }
     .type-info {
       width: 110px;
       flex-shrink: 0;
@@ -214,6 +316,68 @@
       gap: 5px;
       justify-content: center;
       padding: 0 10px;
+    }
+    /* ── ORB MODE TOGGLE ── */
+    .orb-mode-toggle {
+      display: inline-flex;
+      gap: 2px;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 2px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .orb-mode-btn {
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--font);
+      font-size: 9px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      opacity: 0.5;
+    }
+    .orb-mode-btn.active {
+      background: var(--bg-card);
+      color: var(--text);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      opacity: 1;
+    }
+    /* ── PINO (stacked) mode ── */
+    .orb-row.stacked {
+      gap: 14px;
+      align-items: flex-end;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    .orb-day-col {
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      gap: 4px;
+      min-width: 22px;
+    }
+    .orb-day-col .orb {
+      width: 22px;
+      height: 22px;
+    }
+    .orb-day-col .orb svg {
+      width: 22px;
+      height: 22px;
+    }
+        .orb-day-label {
+      font-size: 8px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 3px;
+      white-space: nowrap;
+    }
+    .orb-row.stacked .orb-week-sep {
+      display: none;
     }
     .score-cell {
       width: 70px;
@@ -278,12 +442,25 @@
     .orb svg circle { fill: none; stroke-width: 1.5; }
     .orb-empty svg circle { stroke: var(--orb-empty); }
     .orb-red svg circle { stroke: var(--orb-red); }
-    .orb-red svg .orb-inner { fill: rgba(231, 76, 60, 0.08); }
+    .orb-red svg .orb-inner { fill: none; }
     .orb-orange svg circle { stroke: var(--orb-orange); }
-    .orb-orange svg .orb-inner { fill: rgba(243, 156, 18, 0.08); }
+    .orb-orange svg .orb-inner { fill: none; }
     .orb-green svg circle { stroke: var(--orb-green); }
-    .orb-green svg .orb-inner { fill: rgba(39, 174, 96, 0.08); }
+    .orb-green svg .orb-inner { fill: none; }
     .orb-future { opacity: 0.25; }
+    .orb-week-sep {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 22px;
+      font-size: 8px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
     .orb-star svg { overflow: visible; }
     .orb[data-tip]:hover::after {
       content: attr(data-tip);
@@ -303,17 +480,40 @@
     }
 
     /* ===== GAUGES (puolipyöreä mittari) ===== */
+    /* ===== MAIN LAYOUT: taulukko + gauget rinnakkain ===== */
+    .main-layout {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .main-left { flex: 1; min-width: 0; }
+    .main-right { width: 180px; flex-shrink: 0; }
+
     .gauges-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      display: flex;
+      flex-direction: column;
       gap: 12px;
       margin-bottom: 16px;
+    }
+    @media (max-width: 900px) {
+      .main-layout { flex-direction: column; }
+      .main-right { width: 100%; }
+      .gauges-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        flex-direction: unset;
+      }
+    }
+    @media (max-width: 500px) {
+      .gauges-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
     .gauge-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 20px 16px 14px;
+      padding: 14px 12px 10px;
       text-align: center;
       display: flex;
       flex-direction: column;
@@ -546,6 +746,13 @@
 
     // ===== STATE =====
     let currentView = 'day'; // day | week | month
+    let orbMode = 'row'; // row | stacked
+
+    function setOrbMode(mode) {
+      orbMode = mode;
+      document.querySelectorAll('.orb-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+      render();
+    }
     let currentTab = 'scorecard'; // scorecard | achievements
     let currentDate = new Date();
     let activitiesCache = {};
@@ -624,6 +831,11 @@
       const day = d.getDay();
       const diff = d.getDate() - day + (day === 0 ? -6 : 1);
       return new Date(d.getFullYear(), d.getMonth(), diff);
+    }
+    function getWeekNum(d) {
+      const oneJan = new Date(d.getFullYear(), 0, 1);
+      const days = Math.floor((d - oneJan) / 86400000);
+      return Math.ceil((days + oneJan.getDay() + 1) / 7);
     }
     function getDateRange() {
       if (currentView === 'day') {
@@ -757,6 +969,16 @@
       return 'badge-red';
     }
 
+    // ===== TOGGLE DETAILS (avaa/piilota aktiviteettilista) =====
+    function toggleDetails(id, btn) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const isOpen = el.classList.toggle('open');
+      btn.classList.toggle('open', isOpen);
+      const count = el.children.length;
+      btn.innerHTML = '<span class="toggle-arrow">▶</span> ' + count + ' kirjausta — ' + (isOpen ? 'piilota' : 'näytä');
+    }
+
     // ===== RENDER =====
     async function render() {
       const content = document.getElementById('content');
@@ -832,16 +1054,27 @@
 
       // Activity cards
       html += '<div class="activity-cards">';
+      const nextOpen = data.nextOpen || {};
       TRACKED.forEach(t => {
         const val = dayCounts[t.key] || 0;
         const tgt = targets[t.key] || 0;
         const p = tgt > 0 ? Math.round((val / tgt) * 100) : 0;
+        const next = nextOpen[t.key];
+        let nextInfo = '';
+        if (next) {
+          const nextTime = next.begins ? new Date(next.begins).toLocaleString('fi-FI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+          nextInfo = `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);font-size:10px;color:var(--text-muted)">
+            <div style="font-weight:600;color:var(--text);font-size:11px">${next.account_name || 'Seuraava'}</div>
+            <div>${nextTime}</div>
+          </div>`;
+        }
         html += `
           <div class="activity-card">
             <div class="card-icon">${t.icon}</div>
             <div class="card-value" style="color: ${gaugeColor(p)}">${val}</div>
             <div class="card-label">${t.label}</div>
             <div class="card-target">Tavoite: ${tgt}</div>
+            ${nextInfo}
           </div>`;
       });
       html += '</div>';
@@ -858,40 +1091,123 @@
     function renderPeriod(el, data, config) {
       // config: { dates: [Date], daily: {}, periodTargets: {}, periodLabel: 'vko'|'kk', gaugePrefix: 'w'|'m', dayLabels: fn|null }
       const { dates, daily, periodTargets, periodLabel, gaugePrefix, dayLabels } = config;
+      const nextOpen = data.nextOpen || {};
+      const activitiesList = data.activities || {};
 
       let html = '';
+
+      // Main layout wrapper: taulukko vasemmalla, gauget oikealla
+      html += '<div class="main-layout">';
+      html += '<div class="main-left">';
 
       // Scorecard-taulukko (Matti Myynti -tyyli)
       html += '<div class="sc-table">';
       html += '<div class="sc-header">';
       html += '<span class="col-label col-type">Tyyppi</span>';
-      html += `<span class="col-label col-orbs">Eteneminen — ${dates.length} päivää</span>`;
+      html += `<span class="col-label col-orbs">Eteneminen — ${dates.length} päivää <span class="orb-mode-toggle"><button class="orb-mode-btn ${orbMode==='row'?'active':''}" data-mode="row" onclick="setOrbMode('row')">Rivi</button><button class="orb-mode-btn ${orbMode==='stacked'?'active':''}" data-mode="stacked" onclick="setOrbMode('stacked')">Pino</button></span></span>`;
       html += '<span class="col-label col-result">Tulos</span>';
+      html += '<span class="col-label col-next">Seuraava</span>';
       html += '</div>';
 
       TRACKED.forEach(t => {
         let total = 0;
         let orbsHtml = '';
-        dates.forEach((d, i) => {
-          const ds = fmt(d);
-          const val = (daily[ds] && daily[ds][t.key]) || 0;
-          total += val;
-          const dayTarget = targets[t.key] || 1;
-          const pct = Math.round((val / dayTarget) * 100);
-          const isFuture = d > new Date();
-          const tipLabel = dayLabels ? dayLabels(d, i) : (d.getDate() + '.' + (d.getMonth() + 1) + '.');
-          const tip = tipLabel + ' ' + val + '/' + dayTarget;
-          orbsHtml += isFuture ? futureOrb(tip) : colorOrb(pct, tip);
-        });
+        let lastWeek = -1;
+        const dayTarget = targets[t.key] || 1;
+
+        if (orbMode === 'stacked') {
+          // PINO: viikkokolumnit, 5 palloa (ma-pe) per viikko
+          const weeks = {};
+          dates.forEach((d, i) => {
+            const wn = getWeekNum(d);
+            if (!weeks[wn]) weeks[wn] = [];
+            const ds = fmt(d);
+            const val = (daily[ds] && daily[ds][t.key]) || 0;
+            total += val;
+            const isFuture = d > new Date();
+            const pct = Math.round((val / dayTarget) * 100);
+            weeks[wn].push({ d, val, isFuture, pct });
+          });
+          Object.keys(weeks).sort((a,b) => a-b).forEach(wn => {
+            const weekDays = weeks[wn];
+            orbsHtml += '<div class="orb-day-col">';
+            weekDays.forEach(wd => {
+              const tip = wd.d.getDate() + '.' + (wd.d.getMonth()+1) + '. ' + wd.val + '/' + dayTarget;
+              if (wd.isFuture) { orbsHtml += futureOrb(tip); }
+              else { orbsHtml += colorOrb(wd.pct, tip); }
+            });
+            for (let p = weekDays.length; p < 5; p++) {
+              orbsHtml += '<div class="orb" style="width:16px;height:16px;visibility:hidden"></div>';
+            }
+            orbsHtml += '<div class="orb-day-label">v' + wn + '</div>';
+            orbsHtml += '</div>';
+          });
+        } else {
+          // RIVI: yksi pallo per paiva yhdella rivilla
+          dates.forEach((d, i) => {
+            if (config.showWeekSeps) {
+              const wn = getWeekNum(d);
+              if (wn !== lastWeek) {
+                // no wrapper span to close
+                orbsHtml += '<span class="orb-week-sep">v' + wn + '</span>';
+                lastWeek = wn;
+              }
+            }
+            const ds = fmt(d);
+            const val = (daily[ds] && daily[ds][t.key]) || 0;
+            total += val;
+            const pct = Math.round((val / dayTarget) * 100);
+            const isFuture = d > new Date();
+            const tipLabel = dayLabels ? dayLabels(d, i) : (d.getDate() + '.' + (d.getMonth() + 1) + '.');
+            const tip = tipLabel + ' ' + val + '/' + dayTarget;
+            orbsHtml += isFuture ? futureOrb(tip) : colorOrb(pct, tip);
+          });
+          // week seps handled inline, no wrapper span to close
+        }
 
         const pt = periodTargets[t.key] || 1;
         const totalPct = Math.round((total / pt) * 100);
         const pctClass = totalPct >= 70 ? 'pct-green' : totalPct >= 31 ? 'pct-orange' : 'pct-red';
 
+        // Seuraava avoin aktiviteetti
+        const next = nextOpen[t.key];
+        let nextHtml = '<div class="next-cell">';
+        if (next) {
+          const nextTime = next.begins ? new Date(next.begins).toLocaleString('fi-FI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+          nextHtml += '<div class="next-label">Seuraava</div>';
+          nextHtml += '<div class="next-account">' + (next.account_name || 'Asiakas #' + (next.account_id || '?')) + '</div>';
+          nextHtml += '<div class="next-time">' + nextTime + '</div>';
+        } else {
+          nextHtml += '<div class="next-empty">Ei avoimia</div>';
+        }
+        nextHtml += '</div>';
+
+        // Yksittäiset aktiviteetit (avattava lista)
+        const acts = (activitiesList[t.key] || []).sort((a, b) => (b.begins || '').localeCompare(a.begins || ''));
+        const detailId = gaugePrefix + '_details_' + t.key;
+        let detailHtml = '';
+        if (acts.length > 0) {
+          detailHtml += `<button class="sc-details-toggle" onclick="toggleDetails('${detailId}', this)"><span class="toggle-arrow">▶</span> ${acts.length} kirjausta — näytä</button>`;
+          detailHtml += `<div class="sc-details-list" id="${detailId}">`;
+          acts.forEach(a => {
+            const aTime = a.begins ? new Date(a.begins).toLocaleString('fi-FI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+            detailHtml += '<div class="sc-detail-row">';
+            detailHtml += '<span class="detail-status">✓</span>';
+            detailHtml += '<span class="detail-account">' + (a.account_name || 'Asiakas #' + (a.account_id || '—')) + '</span>';
+            detailHtml += '<span class="detail-time">' + aTime + '</span>';
+            detailHtml += '</div>';
+          });
+          detailHtml += '</div>';
+        }
+
+        html += `<div class="sc-row-wrap">`;
         html += `<div class="sc-row">`;
         html += `<div class="type-info"><div class="type-dot" style="background:${t.dot}"></div><div><div class="type-name">${t.label}</div><div class="type-sub">${targets[t.key] || 0} / päivä</div></div></div>`;
-        html += `<div class="orb-row">${orbsHtml}</div>`;
+        html += `<div class="orb-row ${orbMode === "stacked" ? "stacked" : ""}">${orbsHtml}</div>`;
         html += `<div class="score-cell"><div class="score-num">${total}</div><div class="score-target">/ ${pt}</div><div class="score-pct ${pctClass}">${totalPct}%</div></div>`;
+        html += nextHtml;
+        html += `</div>`;
+        html += detailHtml;
         html += `</div>`;
       });
 
@@ -903,8 +1219,10 @@
       html += '<div class="sc-legend-item"><span style="font-size:12px;color:var(--star-color)">☆</span> Tavoite täynnä</div>';
       html += '</div>';
       html += '</div>'; // sc-table
+      html += '</div>'; // main-left
 
-      // Gauge-mittarit (puolipyöreä SVG)
+      // Gauge-mittarit (puolipyöreä SVG) — oikeassa sivupalkissa
+      html += '<div class="main-right">';
       html += '<div class="gauges-grid">';
       TRACKED.forEach(t => {
         let total = 0;
@@ -923,7 +1241,9 @@
             <div class="gauge-pct-badge ${gaugeBadgeClass(pct)}">${pct}%</div>
           </div>`;
       });
-      html += '</div>';
+      html += '</div>'; // gauges-grid
+      html += '</div>'; // main-right
+      html += '</div>'; // main-layout
 
       el.innerHTML = html;
 
@@ -985,7 +1305,8 @@
         periodTargets: monthTargets,
         periodLabel: 'kk',
         gaugePrefix: 'm',
-        dayLabels: (d) => d.getDate() + '.' + (d.getMonth() + 1) + '.'
+        dayLabels: (d) => d.getDate() + '.' + (d.getMonth() + 1) + '.',
+        showWeekSeps: true
       });
     }
 

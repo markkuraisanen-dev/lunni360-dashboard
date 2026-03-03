@@ -589,7 +589,7 @@ const server = http.createServer(async (req, res) => {
   if (!currentUser) {
     // ── Scorecard Embed (iframe, EI vaadi sessiota) ──
     // Lunni360 kutsuu: /scorecard-embed?token=BEARER_TOKEN&person=Nimi&theme=light
-    if (url === '/scorecard-embed') {
+    if (url === '/scorecard-embed' || url === '/widget-scorecard-embed') {
       const embedParams = new URLSearchParams(req.url.split('?')[1] || '');
       const theme = embedParams.get('theme') || 'light';
       const p = path.join(__dirname, 'scorecard_embed.html');
@@ -652,15 +652,25 @@ const server = http.createServer(async (req, res) => {
         }
 
         // Fetch ALL activities (Lunni API ei tue päivämäärärajausta) and filter server-side
+        const ACTIVITY_FIELDS = 'id,activity_type,status,begins,updated,person_id,name,account_id';
         let allActivities = [];
         if (personIds) {
           for (const pid of personIds) {
-            allActivities = await fetchAllPages(token, 'activities', 'id,activity_type,status,begins,updated,person_id,name');
+            allActivities = await fetchAllPages(token, 'activities', ACTIVITY_FIELDS);
             allActivities = allActivities.filter(a => String(a.person_id) === String(pid));
           }
         } else {
-          allActivities = await fetchAllPages(token, 'activities', 'id,activity_type,status,begins,updated,person_id,name');
+          allActivities = await fetchAllPages(token, 'activities', ACTIVITY_FIELDS);
         }
+
+        // Fetch accounts for name resolution
+        let accountMap = {};
+        try {
+          const accounts = await fetchLunniEmbed('/accounts?fields=id,name&limit=1000');
+          if (Array.isArray(accounts)) {
+            accounts.forEach(a => { accountMap[a.id] = a.name; });
+          }
+        } catch (e) { console.log('[Embed] Accounts fetch failed:', e.message); }
 
         function isInRange(dateStr) {
           if (!dateStr) return false;
@@ -671,6 +681,9 @@ const server = http.createServer(async (req, res) => {
         // Count activities — subject (name-kenttä) erottaa puhelut/tehtävät/sähköpostit
         const counts = { task: 0, call: 0, email: 0, event: 0 };
         const daily = {};
+        const activitiesList = { call: [], task: [], email: [], event: [] };
+        const nextOpen = { call: null, task: null, email: null, event: null };
+        const nowForOpen = new Date();
 
         for (const act of allActivities) {
           const actType = (act.activity_type || '').toLowerCase();
@@ -690,6 +703,22 @@ const server = http.createServer(async (req, res) => {
             }
           }
 
+          // Kerää seuraava avoin per kategoria (status=open, tuleva tai tänään)
+          if (statusContains(status, 'open') && counts.hasOwnProperty(category)) {
+            const actDate = new Date(act.begins);
+            if (actDate >= new Date(nowForOpen.getFullYear(), nowForOpen.getMonth(), nowForOpen.getDate())) {
+              if (!nextOpen[category] || actDate < new Date(nextOpen[category].begins)) {
+                nextOpen[category] = {
+                  id: act.id,
+                  begins: act.begins,
+                  account_id: act.account_id || null,
+                  account_name: accountMap[act.account_id] || null,
+                  category: category
+                };
+              }
+            }
+          }
+
           if (category === 'task' || category === 'call') {
             match = statusContains(status, 'ready') && (isInRange(act.updated) || isInRange(act.begins));
           } else if (category === 'email') {
@@ -705,6 +734,18 @@ const server = http.createServer(async (req, res) => {
               if (!daily[dateKey]) daily[dateKey] = {};
               daily[dateKey][category] = (daily[dateKey][category] || 0) + 1;
             }
+            // Kerää yksittäiset aktiviteetit listaan (max 50 per kategoria)
+            if (activitiesList[category].length < 50) {
+              activitiesList[category].push({
+                id: act.id,
+                begins: act.begins,
+                updated: act.updated,
+                account_id: act.account_id || null,
+                account_name: accountMap[act.account_id] || null,
+                status: act.status,
+                category: category
+              });
+            }
           }
         }
 
@@ -715,7 +756,9 @@ const server = http.createServer(async (req, res) => {
           daily,
           total: counts.total,
           start: monthStart.toISOString().split('T')[0],
-          end: monthEnd.toISOString().split('T')[0]
+          end: monthEnd.toISOString().split('T')[0],
+          activities: activitiesList,
+          nextOpen
         });
 
       } catch (err) {
@@ -1132,14 +1175,24 @@ const server = http.createServer(async (req, res) => {
       }
 
       let allActivities = [];
+      const ACTIVITY_FIELDS_SC = 'id,activity_type,status,begins,updated,person_id,name,account_id';
       if (personIds === null) {
-        allActivities = await fetchAllPages(token, 'activities', 'id,activity_type,status,begins,updated,person_id,name');
+        allActivities = await fetchAllPages(token, 'activities', ACTIVITY_FIELDS_SC);
       } else {
         for (const pid of personIds) {
-          const acts = await fetchLunniJSON('/activities?person_id=' + pid + '&fields=id,activity_type,status,begins,updated,name&limit=1000');
+          const acts = await fetchLunniJSON('/activities?person_id=' + pid + '&fields=' + encodeURIComponent(ACTIVITY_FIELDS_SC) + '&limit=1000');
           if (Array.isArray(acts)) allActivities.push(...acts);
         }
       }
+
+      // Fetch accounts for name resolution
+      let accountMapSC = {};
+      try {
+        const accts = await fetchLunniJSON('/accounts?fields=id,name&limit=1000');
+        if (Array.isArray(accts)) {
+          accts.forEach(a => { accountMapSC[a.id] = a.name; });
+        }
+      } catch (e) { console.log('[Scorecard] Accounts fetch failed:', e.message); }
 
       let debugInfo = undefined;
       if (debug) {
@@ -1163,6 +1216,9 @@ const server = http.createServer(async (req, res) => {
 
       const counts = { task: 0, call: 0, email: 0, event: 0 };
       const perPerson = {};
+      const activitiesListSC = { call: [], task: [], email: [], event: [] };
+      const nextOpenSC = { call: null, task: null, email: null, event: null };
+      const nowForOpenSC = new Date();
 
       for (const act of allActivities) {
         const actType = (act.activity_type || '').toLowerCase();
@@ -1182,6 +1238,22 @@ const server = http.createServer(async (req, res) => {
           }
         }
 
+        // Kerää seuraava avoin per kategoria
+        if (statusContains(status, 'open') && counts.hasOwnProperty(category)) {
+          const actDate = new Date(act.begins);
+          if (actDate >= new Date(nowForOpenSC.getFullYear(), nowForOpenSC.getMonth(), nowForOpenSC.getDate())) {
+            if (!nextOpenSC[category] || actDate < new Date(nextOpenSC[category].begins)) {
+              nextOpenSC[category] = {
+                id: act.id,
+                begins: act.begins,
+                account_id: act.account_id || null,
+                account_name: accountMapSC[act.account_id] || null,
+                category: category
+              };
+            }
+          }
+        }
+
         if (category === 'task' || category === 'call') {
           match = statusContains(status, 'ready') && (isInMonth(act.updated) || isInMonth(act.begins));
         } else if (category === 'email') {
@@ -1195,6 +1267,18 @@ const server = http.createServer(async (req, res) => {
           const pid = act.person_id || 'unknown';
           if (!perPerson[pid]) perPerson[pid] = { task: 0, call: 0, email: 0, event: 0 };
           perPerson[pid][category]++;
+          // Kerää yksittäiset aktiviteetit listaan (max 50 per kategoria)
+          if (activitiesListSC[category].length < 50) {
+            activitiesListSC[category].push({
+              id: act.id,
+              begins: act.begins,
+              updated: act.updated,
+              account_id: act.account_id || null,
+              account_name: accountMapSC[act.account_id] || null,
+              status: act.status,
+              category: category
+            });
+          }
         }
       }
 
@@ -1208,7 +1292,9 @@ const server = http.createServer(async (req, res) => {
         role: userRole,
         viewingPerson: personParam || null,
         counts,
-        totalActivitiesFetched: allActivities.length
+        totalActivitiesFetched: allActivities.length,
+        activities: activitiesListSC,
+        nextOpen: nextOpenSC
       };
 
       if (userRole === 'manager' && teamMembers.length > 0) {
